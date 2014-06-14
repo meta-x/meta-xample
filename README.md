@@ -1,14 +1,13 @@
 # meta-xample
 
-A Clojure library designed to ... well, that part is up to you.
+An example project using paths, enforcer and bodyguard.
 
 ## Usage
 
-FIXME
+`lein ring server`
 
 ## License
 
-Copyright © 2014 FIXME
+Copyright © 2014 Tony Tam
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Released under the MIT license.
