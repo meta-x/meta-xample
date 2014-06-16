@@ -1,62 +1,69 @@
 (ns mx.main
   (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
             [goog.events :as events]
+            [mx.views :refer [index-view sign-view]]
             [om.core :as om :include-macros true]
-            [om.dom :as dom :include-macros true])
+            )
   (:import goog.History
            goog.History.EventType))
 
+;            [mx.views.index :as mx-index]
+;            [mx.views.sign :as mx-sign]
+;            [mx.views.notes :as mx-notes]
+
+(enable-console-print!)
+
+;;; the state
+
+(def app-state (atom {}))
+
+;;; om render functions
+
+(defn- render-index
+  []
+  (println "in index/")
+  (om/root index-view app-state {:target (. js/document (getElementById "content"))})
+  )
+
+(defn- render-sign
+  [in-or-up]
+  (println "in sign-in/up")
+  (let [data (case in-or-up :sign-in {:label "Sign In" :type :sign-in} :sign-up {:label "Sign Up" :type :sign-up})]
+    (om/root sign-view (swap! app-state merge data) {:target (. js/document (getElementById "content"))})
+  ))
+
+(defn- render-notes
+  []
+  (println "in notes")
+  )
+
+(defn- render-note
+  [id]
+  (println "in note/" id)
+  )
+
+;;; routing
+
 (def history (History.))
 
-(def navigation-state (atom [
-  {:name "Sign" :path "/sign"}
-  {:name "Notes" :path "/notes"}
-]))
+; the routes
+(defroute "/" [] (render-index))
+(defroute "/sign-in" [] (render-sign :sign-in))
+(defroute "/sign-up" [] (render-sign :sign-up))
+(defroute "/notes" [] (render-notes))
+(defroute "/notes/:id" [id] (render-note id))
 
-(defroute "/sign"
-  []
-  (js/console.log "in sign-in/up"))
-
-(defroute "/notes"
-  []
-  (js/console.log "in notes"))
-
-(defn- refresh-navigation
-  []
-  (let [token (.getToken history)
-        set-active #(assoc % :active (= (:path %) token))]
-    (swap! navigation-state #(map set-active %))))
-
+; navigation handler
 (defn- on-navigate
   [event]
-  (refresh-navigation)
   (secretary/dispatch! (.-token event)))
 
+;;; wiring
+
+; setup om
+
+
+; setup navigation
 (doto history
-  (goog.events/listen EventType/NAVIGATE on-navigate)
+  (events/listen EventType/NAVIGATE on-navigate)
   (.setEnabled true))
-
-
-
-
-
-(defn- navigation-item-view
-  [{:keys [active path name]} owner]
-  (reify
-  om/IRender
-  (render [this]
-    (dom/li nil
-      (dom/a #js {:href (str "#" path)} (str "[" active "]" " " name))))))
-
-(defn- navigation-view
-  [app owner]
-  (reify
-  om/IRender
-  (render [this]
-    (apply dom/ul nil
-      (om/build-all navigation-item-view app)))))
-
-(om/root
-  navigation-view
-  navigation-state
-  {:target (. js/document (getElementById "navigation"))})
