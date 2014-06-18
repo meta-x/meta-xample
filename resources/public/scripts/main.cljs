@@ -1,44 +1,62 @@
 (ns mx.main
   (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
             [goog.events :as events]
-            [mx.views :refer [index-view sign-view]]
+            [mx.views :refer [index-view sign-view notes-view]]
+            [mx.control :as srv-control]
             [om.core :as om :include-macros true]
-            )
+            [cljs.core.async :refer [chan]]
+  )
   (:import goog.History
            goog.History.EventType))
-
-;            [mx.views.index :as mx-index]
-;            [mx.views.sign :as mx-sign]
-;            [mx.views.notes :as mx-notes]
 
 (enable-console-print!)
 
 ;;; the state
 
-(def app-state (atom {}))
+(def app-state (atom {
+    :notes [{:text "hi wo!" :date "2014-06-17" :visibility "public"}]
+  }))
+
+(def srv-ch (chan))
 
 ;;; om render functions
 
-(defn- render-index
-  []
-  (println "in index/")
-  (om/root index-view app-state {:target (. js/document (getElementById "content"))})
-  )
-
-(defn- render-sign
-  [in-or-up]
-  (println "in sign-in/up")
-  (let [data (case in-or-up :sign-in {:label "Sign In" :type :sign-in} :sign-up {:label "Sign Up" :type :sign-up})]
-    (om/root sign-view (swap! app-state merge data) {:target (. js/document (getElementById "content"))})
+(defn- render-index []
+  (om/root
+    index-view
+    app-state
+    {:target (. js/document (getElementById "content"))
+     :shared {:srv-ch srv-ch}
+     :tx-listen control/state-change-listener}
   ))
 
-(defn- render-notes
-  []
-  (println "in notes")
-  )
+(def sign-in-data {:label "Sign In" :type :sign-in})
+(def sign-up-data {:label "Sign Up" :type :sign-up})
+(defn- get-sign-data [in-or-up]
+  (case in-or-up
+    :sign-in sign-in-data
+    :sign-up sign-up-data))
 
-(defn- render-note
-  [id]
+(defn- render-sign [in-or-up]
+  (om/root
+    sign-view
+    app-state
+    {:target (. js/document (getElementById "content"))
+     :shared {:srv-ch srv-ch}
+     :tx-listen control/state-change-listener
+     :init-state (get-sign-data in-or-up)}
+  ))
+
+(defn- render-notes []
+  (om/root
+    notes-view
+    app-state
+    {:target (. js/document (getElementById "content"))
+     :tx-listen control/state-change-listener
+     :shared {:srv-ch srv-ch}}
+  ))
+
+(defn- render-note [id]
   (println "in note/" id)
   )
 
@@ -60,8 +78,13 @@
 
 ;;; wiring
 
-; setup om
+; TODO: create app-level component that manages view transitions? (this)
 
+(srv-control/init srv-ch)
+
+
+
+; setup om
 
 ; setup navigation
 (doto history

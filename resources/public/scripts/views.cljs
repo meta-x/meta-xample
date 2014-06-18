@@ -1,65 +1,81 @@
 (ns mx.views
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [om.core :as om :include-macros true]
-            [om.dom :as dom :include-macros true]
-            [cljs.core.async :refer [chan <!]]
-            [mx.components :refer [sign-buttons sign-in-up]]))
+  (:require [om.core :as om]
+            [om-tools.core :refer-macros [defcomponent]]
+            [om-tools.dom :as dom :include-macros true]
+            [cljs.core.async :refer [chan <! put!]]
+            [mx.components :refer [sign-buttons sign-in-up note-creator notes-list]]
+            [cljs-http.client :as http]
+  ))
+
+;;; helpers
+
+(defn- get-sign-url [type]
+  (case type
+    :sign-in "/user/session"
+    :sign-up "/user"))
+
+
 
 ;;; views
 
-(defn index-view
-  [data owner]
-  (reify
-    om/IInitState
-    (init-state [_]
-      {:ch (chan)})
+(defcomponent index-view [_ owner]
+  (init-state [_]
+    {:ch (chan)})
 
-    om/IWillMount
-    (will-mount [_]
-      (let [ch (om/get-state owner :ch)]
-        (go (loop []
-          (let [button (<! ch)]
-            (case button
-              :sign-in (println "sign in!")
-              :sign-up (println "sign up!"))
-            (recur))))))
+  (will-mount [_]
+    (let [comp-ch (om/get-state owner :ch)]
+      (go (while true
+        (let [button (<! comp-ch)]
+          (case button
+            ; TODO: transition to another page
+            :sign-in (println "sign in!")
+            :sign-up (println "sign up!"))
+    )))))
 
-    om/IRenderState
-    (render-state [this {:keys [ch]}]
-      (dom/div nil
-        (om/build sign-buttons {:ch ch})
-      ;(dom/div nil (om/build public-notes ...))
-    ))))
+  (render-state [this state]
+    (dom/div
+      (om/build sign-buttons nil {:init-state state})))
+  )
 
+(defcomponent sign-view [_ owner]
+  (init-state [_]
+    {:ch (chan)})
 
-(defn sign-view
-  [data owner]
-  (reify
-    om/IInitState
-    (init-state [_]
-      {:ch (chan) :label (:label data) :type (:type data)})
+  (will-mount [_]
+    (let [comp-ch (om/get-state owner :ch)]
+      (go (while true
+        (let [[type user pass] (<! comp-ch)
+              url (get-sign-url type)
+              srv-rsp (<! (http/post url {:query-params {:username user :password pass}}))] ; TODO: change "query-params", that's not what I want
+          (case (:status srv-rsp)
+            200 (println "done! transition to another page") ; TODO: (put! app-chan ...) or (om/transition! ...) on om/get-shared because app-state is not available
+            (put! comp-ch srv-rsp)) ; else, error, notify child
+    )))))
 
-    om/IWillMount
-    (will-mount [_]
-      (let [ch (om/get-state owner :ch)]
-        (go (loop []
-          (let [data (<! ch)]
-            (println "button was ... " data)
-            (println (-> (om/get-node (nth data 1) "username")
-                         .-value))
-            (println (-> (om/get-node (nth data 1) "password")
-                         .-value))
-            (recur))))))
+  (render-state [this state]
+    (dom/div
+      (om/build sign-in-up nil {:init-state state})))
+  )
 
-    om/IRenderState
-    (render-state [this state]
-      (dom/div nil
-        (om/build sign-in-up state)
-      ;(dom/div nil (om/build public-notes ...))
-    ))))
+(defcomponent notes-view [app owner]
+  (init-state [_]
+    {:ch (chan)})
 
+  (will-mount [_]
+    (let [ch (om/get-state owner :ch)]
+      (go (while true
+        (let [res (<! ch)
+              {:keys [tag rsp-ch]} res]
+          (put! rsp-ch "hey")
+    )))))
 
-
+  (render-state [this state]
+    (dom/div
+      (om/build note-creator nil {:init-state state})
+      (om/build notes-list app)
+    ))
+  )
 
 
 

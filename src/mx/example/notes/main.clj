@@ -20,7 +20,8 @@
 (def routes [
   "/" {:get #'h/index}
 
-  "/user" {:post #'h/user$post :get #'h/user$get}
+  "/user" {:post #'h/user$post}
+  "/user/session" {:post #'h/user-session$post}
   "/user/:id" {:delete #'h/user$delete}
 
   "/note" {:post #'h/note$post :get #'h/notes$get}

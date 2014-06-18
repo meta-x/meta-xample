@@ -28,7 +28,7 @@
     (-> (response "could not create user")
         (status 400))))
 
-(defn user$get
+(defn user-session$post
   [username password] ; sign in
   (if-let [user (s/authenticate-user username password)]
     (-> (response user)

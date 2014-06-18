@@ -24,9 +24,9 @@
     ; CLOJURESCRIPT
     [org.clojure/clojurescript "0.0-2227"]
     [om "0.6.4"]
+    [prismatic/om-tools "0.2.1"]
     [secretary "1.1.1"]
-    [cljs-ajax "0.2.6"]
-    [prismatic/dommy "0.1.2"]
+    [cljs-http "0.1.11"]
   ]
   :profiles {
     :dev {
