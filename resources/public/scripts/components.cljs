@@ -15,19 +15,6 @@
     (.-value)
   ))
 
-(defn- on-sign-click [ch type owner & evt]
-  (let [username (get-node-value owner "username")
-        password (get-node-value owner "password")]
-    (if (clojure.string/blank? username)
-      (om/set-state! owner :label "username required!")) ; TODO: correct this
-    (if (clojure.string/blank? password)
-      (om/set-state! owner :label "password required!")) ; TODO: correct this
-    ; else-all
-    (if (not (or (clojure.string/blank? username)
-                  (clojure.string/blank? password)))
-      (put! ch [type username password]))
-  ))
-
 (defn- toggle-visibility [vis]
   (case vis
     "private" "public"
@@ -35,34 +22,57 @@
 
 ;;; components
 
-(defcomponent sign-buttons [data owner]
-  (render-state [this {:keys [ch] :as state}]
+(defcomponent sign-buttons [_ _]
+  (render-state [_ _]
     (dom/div
       (dom/a {:href "/#/sign-in"}
-        (dom/button {:on-click #(put! ch :sign-in)} "Sign In"))
+        (dom/button {} "Sign In"))
       (dom/a {:href "/#/sign-up"}
-        (dom/button {:on-click #(put! ch :sign-up)} "Sign Up"))
+        (dom/button {} "Sign Up"))
     )
   ))
 
-(defcomponent sign-in-up [data owner]
+
+
+(defn- on-sign-click [ch type owner & evt]
+  (let [username (get-node-value owner "username")
+        password (get-node-value owner "password")]
+    (if (clojure.string/blank? username)
+      (om/set-state! owner :error-msg "username required!")) ; TODO: correct this
+    (if (clojure.string/blank? password)
+      (om/set-state! owner :error-msg "password required!")) ; TODO: correct this
+    ; else-all
+    (if (not (or (clojure.string/blank? username)
+                  (clojure.string/blank? password)))
+      (do
+        (om/set-state! owner :error-msg "")
+        (put! ch {:tag type :username username :password password :rsp-ch (om/get-state owner :rsp-ch)}))
+      )
+  ))
+
+(defcomponent sign-in-up [_ owner]
+  (init-state [_]
+    {:error-msg "" :rsp-ch (chan)})
+
   (will-mount [_]
     (go (while true
-      (let [parent-ch (om/get-state owner :ch)
-            res (<! parent-ch)] ; destructure res {:success? ... :...}
-        (case (:status res)
-          404 (om/set-state! owner :label "ahhhhhhhh") ; TODO: correct this
-          ; TODO: status code for existing username
-          ; TODO: error ... change UI, (om/set-state! owner ...)
-          500 (println "TODO: this shouldn't happen, server must return another error")
-          (println "..."))
+      (let [rsp-ch (om/get-state owner :rsp-ch)
+            res (<! rsp-ch)] ; destructure res {:success? ... :...}
+        (println res)
+        ; (case (:status res)
+        ;   404 (om/set-state! owner :label "ahhhhhhhh") ; TODO: correct this
+        ;   ; TODO: status code for existing username
+        ;   ; TODO: error ... change UI, (om/set-state! owner ...)
+        ;   500 (println "TODO: this shouldn't happen, server must return another error")
+        ;   (println "..."))
     ))))
 
-  (render-state [this {:keys [label type ch] :as state}]
+  (render-state [_ {:keys [label type error-msg]}]
     (dom/div
       (dom/input {:type "text" :placeholder "username" :ref "username"})
       (dom/input {:type "password" :placeholder "password" :ref "password"})
-      (dom/button {:on-click (partial on-sign-click ch type owner)} label)
+      (dom/button {:on-click (partial on-sign-click (om/get-shared owner :srv-ch) type owner)} label)
+      (dom/div {:class "hidden" :ref "error"} error-msg)
     ))
   )
 
@@ -74,27 +84,28 @@
     (toggle-visibility)
     (om/set-state! owner :visibility)))
 
-(defn- on-create-click [srv-ch rsp-ch owner & evt]
-  (put! srv-ch {
+(defn- on-create-click [owner & evt]
+  (put! (om/get-shared owner :srv-ch) {
     :tag :create-note
     :text (get-node-value owner "text")
     :visibility (om/get-state owner :visibility)
-    :rsp-ch rsp-ch
+    :rsp-ch (get-state owner :rsp-ch)
   }))
 
 (defcomponent note-creator [_ owner]
   (init-state [_]
-    {:text "" :visibility "public" :rsp-ch (chan)})
+    {:visibility "public" :rsp-ch (chan)})
 
   (will-mount [_]
     (let [rsp-ch (om/get-state owner :rsp-ch)]
       (go (while true
         (let [res (<! rsp-ch)]
-          (case (:status res)
-            200 (println "success! clean the textarea!") ; TODO: om/set-state! ...
-            404 (println "oops.. something went wrong!") ; TODO: om/set-state! ...
-            500 (println "TODO: this shouldn't happen, server must return another error") ; TODO: om/set-state! ...
-            (println "...?" res)) ; TODO: om/set-state! ...
+          (println res)
+          ; (case (:status res)
+          ;   200 (println "success! clean the textarea!") ; TODO: om/set-state! ...
+          ;   404 (println "oops.. something went wrong!") ; TODO: om/set-state! ...
+          ;   500 (println "TODO: this shouldn't happen, server must return another error") ; TODO: om/set-state! ...
+          ;   (println "...?" res)) ; TODO: om/set-state! ...
     )))))
 
   (render-state [this {:keys [ch rsp-ch text visibility :as state]}]
@@ -104,7 +115,7 @@
       ; OR get value from the node
       (dom/textarea {:rows 3 :ref "text"} text)
       (dom/button {:ref "visibility" :on-click (partial on-create-vis-click owner)} visibility)
-      (dom/button {:on-click (partial on-create-click ch rsp-ch owner)} "create!")
+      (dom/button {:on-click (partial on-create-click owner)} "create!")
     )))
 
 
@@ -128,13 +139,7 @@
 
 
 
-(defcomponent notes-list [{:keys [notes] :as data} owner]
-  (init-state [_]
-    )
-
-  (will-mount [_]
-    )
-
+(defcomponent notes-list [{:keys [notes]} owner]
   (render-state [this state]
     (dom/ul {:class "notes"}
       (om/build-all note-item notes))
