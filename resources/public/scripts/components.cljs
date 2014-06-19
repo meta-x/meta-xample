@@ -58,7 +58,7 @@
     (go (while true
       (let [rsp-ch (om/get-state owner :rsp-ch)
             res (<! rsp-ch)] ; destructure res {:success? ... :...}
-        (println res)
+        (println "TODO: xxx" res)
         ; (case (:status res)
         ;   404 (om/set-state! owner :label "ahhhhhhhh") ; TODO: correct this
         ;   ; TODO: status code for existing username
@@ -78,6 +78,21 @@
 
 
 
+
+(defcomponent sign-out [_ owner] ; TODO: tbi
+  (will-mount [_]
+
+    )
+
+  (render-state [_ _]
+
+    )
+  )
+
+
+
+
+
 (defn- on-create-vis-click [owner & evt]
   (->>
     (om/get-state owner :visibility)
@@ -89,52 +104,74 @@
     :tag :create-note
     :text (get-node-value owner "text")
     :visibility (om/get-state owner :visibility)
-    :rsp-ch (get-state owner :rsp-ch)
+    :rsp-ch (om/get-state owner :rsp-ch)
   }))
 
-(defcomponent note-creator [_ owner]
+(defcomponent note-creator [app owner]
   (init-state [_]
-    {:visibility "public" :rsp-ch (chan)})
+    {:text "" :visibility "private" :rsp-ch (chan)})
 
   (will-mount [_]
     (let [rsp-ch (om/get-state owner :rsp-ch)]
       (go (while true
-        (let [res (<! rsp-ch)]
-          (println res)
-          ; (case (:status res)
-          ;   200 (println "success! clean the textarea!") ; TODO: om/set-state! ...
-          ;   404 (println "oops.. something went wrong!") ; TODO: om/set-state! ...
-          ;   500 (println "TODO: this shouldn't happen, server must return another error") ; TODO: om/set-state! ...
-          ;   (println "...?" res)) ; TODO: om/set-state! ...
+        (let [{:keys [ok? note] :as res} (<! rsp-ch)]
+          (case ok?
+            true (do
+              (om/set-state! owner :text "") ; TODO: not working because state is not correctly wired to the textarea
+              (om/transact! app :notes #(vec (cons note %)))) ; TODO: hm...
+            false (println "sad face") ; TODO: error msg...
+          )
     )))))
 
-  (render-state [this {:keys [ch rsp-ch text visibility :as state]}]
+  (render-state [this {:keys [text visibility rsp-ch]}]
     (dom/div
       ; TODO: we need to wire the textarea to our state so on-create-click views the most up to date data
       ; set-state! when the textarea is being edited.. but that's a bit inneficient, no?
-      ; OR get value from the node
-      (dom/textarea {:rows 3 :ref "text"} text)
+      ; -text- is not being set when textarea is changed
+      (dom/textarea {:rows 5 :columns 20 :ref "text" :placeholder "Don't forget, create a note..." });:value text})
       (dom/button {:ref "visibility" :on-click (partial on-create-vis-click owner)} visibility)
       (dom/button {:on-click (partial on-create-click owner)} "create!")
-    )))
+  )))
 
 
 
 
-(defn- on-item-vis-click [cursor & evt]
-  ; TODO: notify parent channel to change value in server
-  ; in response, transact!
-  (om/transact! cursor :visibility toggle-visibility)
-  )
+
+(defn- on-item-vis-change [cursor srv-ch rsp-ch & evt]
+  ; TODO: some kind of "progress bar element" should be activated
+  (put! srv-ch {
+    :tag :update-note
+    :rsp-ch rsp-ch
+    :note {
+      :note-id (:_id @cursor)
+      :visibility (toggle-visibility (:visibility @cursor))
+    }}))
+
+; (defn- on-item-text-update []
+;   )
 
 (defcomponent note-item [{:keys [text date visibility] :as cursor} owner]
-  (render-state [this state]
+  (init-state [_]
+    {:rsp-ch (chan)})
+
+  (will-mount [_]
+    (let [rsp-ch (om/get-state owner :rsp-ch)]
+      (go (while true
+        (let [{:keys [ok?] :as res} (<! rsp-ch)]
+          (case ok?
+            true (om/transact! cursor :visibility toggle-visibility) ; TODO: hm... I don't like this
+            false (println "sad face") ; TODO: error msg...
+          )
+  )))))
+
+  (render-state [this {:keys [rsp-ch]}]
     (dom/li {:class "note"}
       (dom/label {:class "label"} text)
       (dom/span {:class "date"} date)
-      (dom/button {:class "visibility" :on-click (partial on-item-vis-click cursor)} visibility)
+      (dom/button {:class "visibility" :on-click (partial on-item-vis-change cursor (om/get-shared owner :srv-ch) rsp-ch)} visibility)
     )
   ))
+
 
 
 
@@ -145,14 +182,5 @@
       (om/build-all note-item notes))
     )
   )
-
-
-
-
-
-
-
-
-
 
 
