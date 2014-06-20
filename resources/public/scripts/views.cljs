@@ -4,23 +4,29 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-tools.dom :as dom :include-macros true]
             [cljs.core.async :refer [chan <! put!]]
-            [mx.components :refer [sign-buttons sign-in-up note-creator notes-list note-item]]
+            [mx.components :refer [sign-buttons sign-out-button sign-in-up note-creator notes-list note-item]]
             [cljs-http.client :as http]
   ))
 
 ;;; views
 
-(defcomponent index-view [_ _]
+(defcomponent index-view [{:keys [authenticated] :as app} _]
+  ; TODO: this is incorrect
+  ; it should be: if authenticated... else...
   (render-state [_ _]
     (dom/div
-      (om/build sign-buttons nil)))) ; TODO: maybe it's a good idea to pass app, if app includes ":current-view"
+      (if authenticated
+        (om/build sign-out-button app)
+        (om/build sign-buttons app)))))
 
-(defcomponent sign-view [_ owner]
+(defcomponent sign-view [app owner]
+  ; TODO: back button / !sign
   (render-state [_ state]
     (dom/div
-      (om/build sign-in-up nil {:init-state state})))) ; TODO: maybe it's a good idea to pass app, if app includes ":current-view"
+      (om/build sign-in-up app {:init-state state})))) ; TODO: maybe it's a good idea to pass app, if app includes ":current-view"
 
 (defcomponent notes-view [app owner]
+  ; TODO: link to index
   (render-state [this {:keys [loading evt-ch]}]
     (dom/div
       (om/build note-creator app)
@@ -51,6 +57,7 @@
   )))))
 
 (defcomponent note-view [app owner]
+  ; TODO: link to notes
   (init-state [_]
     {:loading true :evt-ch (chan)})
 

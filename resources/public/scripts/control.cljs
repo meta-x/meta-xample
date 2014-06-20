@@ -10,35 +10,32 @@
 (defn- get-sign-url [type]
   (case type
     :sign-in "/user/session"
+    :sign-out "/user/session"
     :sign-up "/user"))
 
-(defn- sign [type user pass rsp-ch]
+(defn- sign [type method params rsp-ch]
   (go
     (let [url (get-sign-url type)
-          srv-rsp (<! (http/post url {:query-params {:username user :password pass}}))] ; TODO: change "query-params" - I want form-params
-      (case (:status srv-rsp)
-        200 (println "done! transition to another page") ; TODO: (put! app-chan ...) or (om/transition! ...) or om/get-shared because app-state is not available
-        (put! rsp-ch srv-rsp))))) ; else, error, notify child
+          {:keys [status body] :as srv-rsp} (<! (method url {:query-params params}))] ; TODO: change "query-params" - I want form-params
+      (case status
+        200 (put! rsp-ch {:ok? true :user body})
+        (put! rsp-ch {:ok? false :error body}))))) ; else, error, notify child
 
 (defn- sign-up [user pass rsp-ch]
-  )
+  (sign :sign-up http/post {:username user :password pass} rsp-ch))
 
 (defn- sign-in [user pass rsp-ch]
-  )
+  (sign :sign-in http/post {:username user :password pass} rsp-ch))
 
 (defn- sign-out [user-id rsp-ch]
-;   (let [user-id (.getItem js/localStorage :user-id)
-;         url (str "/user/" user-id)]
-;     (DELETE url {:handler #(println "yay")})))
-  )
+  (sign :sign-out http/delete {:id user-id} rsp-ch))
 
 (defn get-private-notes [user-id rsp-ch]
   (go
     (let [{:keys [status body]} (<! (http/get "/note" {}))]
       (case status
         200 (put! rsp-ch {:ok? true :notes (reverse body)})
-        (put! rsp-ch {:ok? false :error body})
-  ))))
+        (put! rsp-ch {:ok? false :error body})))))
 
 (defn get-public-notes [rsp-ch]
   ; TODO: needs backend implementation
@@ -50,16 +47,14 @@
     (let [{:keys [status body]} (<! (http/post "/note" {:query-params {:text text :visibility visibility}}))] ; TODO: change "query-params" - I want form-params
       (case status
         200 (put! rsp-ch {:ok? true :note body})
-        (put! rsp-ch {:ok? false :error body})
-  ))))
+        (put! rsp-ch {:ok? false :error body})))))
 
 (defn- delete-note [note-id rsp-ch]
   (go
     (let [{:keys [status body]} (<! (http/delete (str "/note/" note-id)))]
       (case status
         200 (put! rsp-ch {:ok? true})
-        (put! rsp-ch {:ok? false :error body})
-  ))))
+        (put! rsp-ch {:ok? false :error body})))))
 
 (defn- get-update-note-params [{:keys [note-id text visibility] :as note}]
   (if-not (or (nil? text) (nil? visibility))
@@ -74,16 +69,14 @@
     (let [{:keys [status body]} (<! (http/put (str "/note/" note-id) {:query-params (get-update-note-params note)}))]
       (case status
         200 (put! rsp-ch {:ok? true})
-        (put! rsp-ch {:ok? false :error body})
-  ))))
+        (put! rsp-ch {:ok? false :error body})))))
 
 (defn- get-note [note-id rsp-ch]
   (go
     (let [{:keys [status body] :as srv-rsp} (<! (http/get (str "/note/" note-id)))]
       (case status
         200 (put! rsp-ch {:ok? true :note body})
-        (put! rsp-ch {:ok? false :error body})
-  ))))
+        (put! rsp-ch {:ok? false :error body})))))
 
 ;;; server control
 
@@ -91,10 +84,9 @@
   (go (while true
     (let [{:keys [tag rsp-ch] :as data} (<! ch)]
       (case tag
-        ; TODO: xxx
-        :sign-up (println "sign-up" data)
-        :sign-in (println "sign-in" data)
-        :sign-out (println "sign-out" data)
+        :sign-up (sign-up (:username data) (:password data) rsp-ch)
+        :sign-in (sign-in (:username data) (:password data) rsp-ch)
+        :sign-out (sign-out (:user-id data) rsp-ch)
         :create-note (create-note (:user-id data) (:text data) (:visibility data) rsp-ch)
         :delete-note (delete-note (:note-id data) rsp-ch)
         :update-note (update-note (:note data) rsp-ch)

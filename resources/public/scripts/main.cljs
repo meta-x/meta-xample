@@ -16,11 +16,15 @@
 
 ;;; the state
 
-(def app-state (atom {
+(def app-state (atom { ; application state
+    :current-view :index ; used to transition between "pages"
     :authenticated false
+    :username nil
+    :user-id nil
+    :notes []
   }))
 
-(def srv-ch (chan))
+(def srv-ch (chan)) ; the shared channel used to communicate upstream with the server-control module
 
 ;;; om render functions
 
@@ -84,8 +88,7 @@
 (srv-control/init srv-ch)
 
 ; secretary's navigation handler
-(defn- on-navigate
-  [event]
+(defn- on-navigate [event]
   (secretary/dispatch! (.-token event)))
 
 ; init navigation

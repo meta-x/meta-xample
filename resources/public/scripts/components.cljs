@@ -22,77 +22,76 @@
 
 ;;; components
 
+; sign in & sign up buttons component
 (defcomponent sign-buttons [_ _]
   (render-state [_ _]
     (dom/div
       (dom/a {:href "/#/sign-in"}
-        (dom/button {} "Sign In"))
+        (dom/button nil "Sign In"))
       (dom/a {:href "/#/sign-up"}
-        (dom/button {} "Sign Up"))
-    )
-  ))
+        (dom/button nil "Sign Up")))))
 
+; sign out component TODO: tbi
+(defn- on-sign-out-click [app owner]
+  (let [rsp-ch (chan)]
+    (put! (om/get-shared owner :srv-ch) {:tag :sign-out :rsp-ch rsp-ch})
+    (go
+      (let [{:keys [ok? user] :as res} (<! rsp-ch)]
+        (case ok?
+          true (do
+            (om/update! app :authenticated false)
+            (om/update! app :user-id nil)
+            (println "signed out!"))  ; TODO: transition
+          false (println "uh oh" (:error res)))))))
 
+(defcomponent sign-out-button [app owner]
+  (render-state [_ _]
+    (dom/div
+      (dom/button {:on-click (partial on-sign-out-click app owner)} "Sign Out"))))
 
-(defn- on-sign-click [ch type owner & evt]
+; sign in/up component
+(defn- set-error [owner msg]
+  (om/set-state! owner :error-msg msg))
+
+(defn- sign [app owner type username password]
+  (let [rsp-ch (chan)]
+    (set-error owner "") ; clear error
+    (put! (om/get-shared owner :srv-ch) {:tag type :username username :password password :rsp-ch rsp-ch})
+    (go (while true
+      (let [{:keys [ok? user] :as res} (<! rsp-ch)]
+        (case ok?
+          true (do
+            (om/update! app :user-id (:_id user))
+            (om/update! app :username (:username user))
+            (om/update! app :authenticated true)
+            (println "great success!")) ; TODO: transition
+          false (om/set-state! owner :error-msg (:error res))))))))
+
+(defn- on-sign-click [app owner type & evt]
   (let [username (clojure.string/trim (get-node-value owner "username"))
         password (clojure.string/trim (get-node-value owner "password"))]
     (if (clojure.string/blank? username)
-      (om/set-state! owner :error-msg "username required!")) ; TODO: correct this
+      (set-error owner "username required!")) ; TODO: correct this
     (if (clojure.string/blank? password)
-      (om/set-state! owner :error-msg "password required!")) ; TODO: correct this
+      (set-error owner "password required!")) ; TODO: correct this
     ; else-all
-    (if (not (or (clojure.string/blank? username)
-                  (clojure.string/blank? password)))
-      (do
-        (om/set-state! owner :error-msg "")
-        (put! ch {:tag type :username username :password password :rsp-ch (om/get-state owner :rsp-ch)}))
-      )
-  ))
+    (if (not (or (clojure.string/blank? username) (clojure.string/blank? password)))
+      (sign app owner type username password))))
 
-(defcomponent sign-in-up [_ owner]
+(defcomponent sign-in-up [app owner]
   (init-state [_]
-    {:error-msg "" :rsp-ch (chan)})
-
-  (will-mount [_]
-    (go (while true
-      (let [rsp-ch (om/get-state owner :rsp-ch)
-            res (<! rsp-ch)] ; destructure res {:success? ... :...}
-        (println "TODO: xxx" res)
-        ; (case (:status res)
-        ;   404 (om/set-state! owner :label "ahhhhhhhh") ; TODO: correct this
-        ;   ; TODO: status code for existing username
-        ;   ; TODO: error ... change UI, (om/set-state! owner ...)
-        ;   500 (println "TODO: this shouldn't happen, server must return another error")
-        ;   (println "..."))
-    ))))
+    {:error-msg ""})
 
   (render-state [_ {:keys [label type error-msg]}]
     (dom/div
       (dom/input {:type "text" :placeholder "username" :ref "username"})
       (dom/input {:type "password" :placeholder "password" :ref "password"})
-      (dom/button {:on-click (partial on-sign-click (om/get-shared owner :srv-ch) type owner)} label)
+      (dom/button {:on-click (partial on-sign-click app owner type)} label)
       (dom/div {:class "hidden" :ref "error"} error-msg)
     ))
   )
 
-
-
-
-(defcomponent sign-out [_ owner] ; TODO: tbi
-  (will-mount [_]
-
-    )
-
-  (render-state [_ _]
-
-    )
-  )
-
-
-
-
-
+; note creator component
 (defn- on-create-vis-click [owner & evt]
   (->>
     (om/get-state owner :visibility)
@@ -134,8 +133,7 @@
       (dom/button {:on-click (partial on-create-click owner)} "create!")
   )))
 
-
-
+; note item component
 (defn- on-item-vis-change [cursor owner srv-ch & evt] ;[_id visibility srv-ch rsp-ch & evt]
   ; TODO: some kind of "progress bar element" should be activated
   ; TODO: disable visibility change button while operation is pending
@@ -173,8 +171,7 @@
           (dom/button {:class "visibility" :on-click (partial on-item-vis-change cursor owner srv-ch)} visibility)
   )))))
 
-
-
+; notes list component
 (defn- get-notes [app owner]
   (let [srv-ch (om/get-shared owner :srv-ch)
         user-id (.getItem js/localStorage :user-id) ; TODO: ew... this should be coming from app-state
@@ -195,9 +192,7 @@
     (go (while true
       (let [[evt cursor] (<! evt-ch)]
         (case evt
-          :destroy (let [id (:_id cursor)]
-            (println "destroy teh " cursor "!")
-            (om/transact! app :notes (fn [notes] (into [] (remove #(= (:_id %) id) notes)))))
+          :destroy (om/transact! app :notes (fn [notes] (into [] (remove #(= (:_id %) (:_id cursor)) notes))))
           (println "else!"))
   )))))
 

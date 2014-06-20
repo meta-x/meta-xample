@@ -11,6 +11,10 @@
 ; :coerce
 ; :validate
 
+; TODO: in the handlers that require the user-id, it should not be extracted from the auth, but explicitely sent and used
+; auth-obj will be used bodyguard and it should not be assumed that all strategies will have the user-id present in auth-obj
+; auth-obj can simply contain the auth-token or whatever...
+
 (defn index
   [request]
   ; (if (nil? (get-current-auth request))
@@ -36,7 +40,7 @@
     (-> (response "incorrect username or password")
         (status 404))))
 
-(defn user$delete
+(defn user-session$delete
   [id ^{:name :mx.bodyguard.utils/auth} auth] ; sign out
   ; TODO: you can't just delete everything
   ; del-current-auth has to delete the "current" session

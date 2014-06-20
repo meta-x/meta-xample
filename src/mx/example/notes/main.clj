@@ -21,8 +21,7 @@
   "/" {:get #'h/index}
 
   "/user" {:post #'h/user$post}
-  "/user/session" {:post #'h/user-session$post}
-  "/user/:id" {:delete #'h/user$delete}
+  "/user/session" {:post #'h/user-session$post :delete #'h/user-session$delete}
 
   "/note" {:post #'h/note$post :get #'h/notes$get}
   "/note/:id" {:get #'h/note$get :put #'h/note$put :delete #'h/note$delete}
