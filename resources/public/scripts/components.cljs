@@ -184,7 +184,7 @@
       (let [{:keys [ok?] :as res} (<! rsp-ch)]
         (case ok?
           true (do
-            (om/transact! app :notes #(vec (concat % (:notes res))))
+            (om/transact! app :notes #(vec (:notes res)))
             (om/set-state! owner :loading false))
           false (do
             (println ":(")) ; TODO: set error msg / click here to try again, etc

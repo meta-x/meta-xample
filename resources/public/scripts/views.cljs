@@ -26,9 +26,6 @@
       (om/build note-creator app)
       (om/build notes-list app))))
 
-
-
-
 (defn- get-note [app owner]
   (let [srv-ch (om/get-shared owner :srv-ch)
         note-id (om/get-state owner :note-id)
@@ -38,17 +35,7 @@
       (let [{:keys [ok? note] :as res} (<! rsp-ch)]
         (case ok?
           true (do
-            ; be evil: replace notes with [note]
-            (om/transact! app :notes #(vector note))
-            ; be nice: update/add the note into notes
-            ; (om/transact!
-            ;   app
-            ;   :notes
-            ;   (fn [notes]
-            ;     ; returns the index of the note with note-id in notes or nil if not present
-            ;     (if-let [note-idx (first (keep-indexed #(if (= (:_id %2) note-id) %1) notes))]
-            ;       (assoc notes note-idx note) ; update the value of the note
-            ;       (vec (cons note notes))))) ; add new note to notes
+            (om/transact! app :notes #(vector note)) ; be evil: replace notes with [note]
             (om/set-state! owner :loading false))
           false (do
             (println ":(")) ; TODO: set error msg / click here to try again, etc
@@ -59,7 +46,7 @@
     (go (while true
       (let [[evt cursor] (<! evt-ch)]
         (case evt
-          :destroy (println "destroy teh " cursor "!")
+          :destroy (println "go back to /#/notes")
           (println "else!"))
   )))))
 
@@ -72,7 +59,6 @@
     (destroy-note app owner))
 
   (render-state [this {:keys [loading note-id evt-ch] :as state}]
-    (println app)
     (dom/div
       (if loading
         (dom/span (str "Loading... "))
