@@ -106,11 +106,13 @@
         (println "hmz") ; TODO: define return value {:ok? true/false :}
   ))))
 
-
-
-
-
-
+(defn- get-note [note-id rsp-ch]
+  (go
+    (let [{:keys [status body] :as srv-rsp} (<! (http/get (str "/note/" note-id)))]
+      (case status
+        200 (put! rsp-ch {:ok? true :note body})
+        (println "ooops, couldn't get note" note-id)
+  ))))
 
 ;;; server control
 
@@ -127,11 +129,10 @@
         :edit-note (println "editing note" data)
         :delete-note (delete-note (:note-id data) rsp-ch)
         :update-note (update-note (:note data) rsp-ch)
+        :get-note (get-note (:note-id data) rsp-ch)
         :get-private-notes (get-private-notes (:user-id data) rsp-ch)
         :get-public-notes (println "retrieving public notes" data)
         (do
           (println "oops" data)
           (put! rsp-ch data))
   )))))
-
-

@@ -206,10 +206,8 @@
     {:loading true :evt-ch (chan)})
 
   (will-mount [_]
-    ; load initial data
-    (get-notes app owner)
-    (destroy-note app owner)
-    )
+    (get-notes app owner) ; load initial data
+    (destroy-note app owner))
 
   (render-state [_ {:keys [loading evt-ch]}]
     ; TODO: retrieving data from the server might fail - make view ready for that
@@ -218,4 +216,3 @@
         (dom/span "Loading...")
         (om/build-all note-item notes {:init-state {:evt-ch evt-ch}}))
   )))
-

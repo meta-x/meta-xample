@@ -4,17 +4,20 @@
             [om.core :as om :include-macros true]
             [cljs.core.async :refer [chan]]
             [mx.control :as srv-control]
-            [mx.views :refer [index-view sign-view notes-view]]
+            [mx.views :refer [index-view sign-view notes-view note-view]]
   )
   (:import goog.History
            goog.History.EventType))
+
+; TODO: v2
+; add support for http://quilljs.com/
 
 (enable-console-print!)
 
 ;;; the state
 
 (def app-state (atom {
-    :notes []
+    :authenticated false
   }))
 
 (def srv-ch (chan))
@@ -54,8 +57,13 @@
     }))
 
 (defn- render-note [id]
-  (println "in note/" id)
-  )
+  (om/root
+    note-view
+    app-state
+    {:target (. js/document (getElementById "content"))
+     :shared {:srv-ch srv-ch}
+     :init-state {:note-id id}
+    }))
 
 ;;; routing
 
