@@ -5,30 +5,12 @@
             [cljs-http.client :as http]
   ))
 
-;;; helpers
+;;; server operations
 
 (defn- get-sign-url [type]
   (case type
     :sign-in "/user/session"
     :sign-up "/user"))
-
-
-(defn- reply [ch ]
-
-  )
-
-(defn- srv-op []
-
-  )
-
-; (defn mutate-and-put! [op ch state k v]
-;   (op state k v)
-;   (put! ch {k v})
-;   )
-
-;;; server operations
-
-; TODO: fix signatures
 
 (defn- sign [type user pass rsp-ch]
   (go
@@ -50,42 +32,33 @@
 ;     (DELETE url {:handler #(println "yay")})))
   )
 
-
-
 (defn get-private-notes [user-id rsp-ch]
   (go
-    (let [srv-ch (http/get "/note" {})
-          {:keys [status body]} (<! srv-ch)]
+    (let [{:keys [status body]} (<! (http/get "/note" {}))]
       (case status
         200 (put! rsp-ch {:ok? true :notes (reverse body)})
-        401 (put! rsp-ch {:ok? false})
-        (println "hmz") ; TODO: define return value {:ok? true/false :}
+        (put! rsp-ch {:ok? false :error body})
   ))))
 
-
-
-; (defn get-public-notes
-;   []
-;   ; TODO: implement backend
-;   )
-
-
+(defn get-public-notes [rsp-ch]
+  ; TODO: needs backend implementation
+  (println "TODO: not implemented")
+  )
 
 (defn create-note [user-id text visibility rsp-ch]
   (go
-    ; TODO: change "query-params" - I want form-params
-    (let [srv-rsp (<! (http/post "/note" {:query-params {:text text :visibility visibility}}))]
-      (case (:status srv-rsp)
-        200 (put! rsp-ch {:ok? true :note (:body srv-rsp)})
-        (println "uh oh, note not created!" srv-rsp) ; (put! rsp-ch (:body srv-rsp)) ; TODO: parse this..
+    (let [{:keys [status body]} (<! (http/post "/note" {:query-params {:text text :visibility visibility}}))] ; TODO: change "query-params" - I want form-params
+      (case status
+        200 (put! rsp-ch {:ok? true :note body})
+        (put! rsp-ch {:ok? false :error body})
   ))))
 
 (defn- delete-note [note-id rsp-ch]
   (go
-    (let [srv-rsp (<! (http/delete (str "/note/" note-id)))]
-      (case (:status srv-rsp)
+    (let [{:keys [status body]} (<! (http/delete (str "/note/" note-id)))]
+      (case status
         200 (put! rsp-ch {:ok? true})
-        (println "ooops, couldn't delete note" note-id)
+        (put! rsp-ch {:ok? false :error body})
   ))))
 
 (defn- get-update-note-params [{:keys [note-id text visibility] :as note}]
@@ -98,12 +71,10 @@
 
 (defn- update-note [{:keys [note-id] :as note} rsp-ch]
   (go
-    (let [srv-ch (http/put (str "/note/" note-id) {:query-params (get-update-note-params note)})
-          {:keys [status body]} (<! srv-ch)]
+    (let [{:keys [status body]} (<! (http/put (str "/note/" note-id) {:query-params (get-update-note-params note)}))]
       (case status
         200 (put! rsp-ch {:ok? true})
-        401 (put! rsp-ch {:ok? false})
-        (println "hmz") ; TODO: define return value {:ok? true/false :}
+        (put! rsp-ch {:ok? false :error body})
   ))))
 
 (defn- get-note [note-id rsp-ch]
@@ -111,27 +82,25 @@
     (let [{:keys [status body] :as srv-rsp} (<! (http/get (str "/note/" note-id)))]
       (case status
         200 (put! rsp-ch {:ok? true :note body})
-        (println "ooops, couldn't get note" note-id)
+        (put! rsp-ch {:ok? false :error body})
   ))))
 
 ;;; server control
 
 (defn init [ch]
   (go (while true
-    (let [data (<! ch)
-          {:keys [tag rsp-ch]} data]
+    (let [{:keys [tag rsp-ch] :as data} (<! ch)]
       (case tag
         ; TODO: xxx
         :sign-up (println "sign-up" data)
         :sign-in (println "sign-in" data)
         :sign-out (println "sign-out" data)
         :create-note (create-note (:user-id data) (:text data) (:visibility data) rsp-ch)
-        :edit-note (println "editing note" data)
         :delete-note (delete-note (:note-id data) rsp-ch)
         :update-note (update-note (:note data) rsp-ch)
         :get-note (get-note (:note-id data) rsp-ch)
         :get-private-notes (get-private-notes (:user-id data) rsp-ch)
-        :get-public-notes (println "retrieving public notes" data)
+        :get-public-notes (get-public-notes rsp-ch)
         (do
           (println "oops" data)
           (put! rsp-ch data))
