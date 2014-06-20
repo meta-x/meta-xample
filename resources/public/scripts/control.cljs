@@ -80,19 +80,13 @@
         (println "uh oh, note not created!" srv-rsp) ; (put! rsp-ch (:body srv-rsp)) ; TODO: parse this..
   ))))
 
-
-
-; (defn- delete-note [target]
-;   (let [elem (js->clj (.-currentTarget target))
-;         parent (.-parentNode elem)]
-;     (DELETE (str "/note/" (attr parent :data-id)) {
-;       :params {}
-;       :handler #(remove! parent) ; TODO: Uncaught TypeError: Cannot read property 'removeChild' of null
-;       :error-handler #(println %) ; TODO: set some error msg
-;       :format :raw
-;     })))
-
-
+(defn- delete-note [note-id rsp-ch]
+  (go
+    (let [srv-rsp (<! (http/delete (str "/note/" note-id)))]
+      (case (:status srv-rsp)
+        200 (put! rsp-ch {:ok? true})
+        (println "ooops, couldn't delete note" note-id)
+  ))))
 
 (defn- get-update-note-params [{:keys [note-id text visibility] :as note}]
   (if-not (or (nil? text) (nil? visibility))
@@ -131,7 +125,7 @@
         :sign-out (println "sign-out" data)
         :create-note (create-note (:user-id data) (:text data) (:visibility data) rsp-ch)
         :edit-note (println "editing note" data)
-        :delete-note (println "deleting note" data)
+        :delete-note (delete-note (:note-id data) rsp-ch)
         :update-note (update-note (:note data) rsp-ch)
         :get-private-notes (get-private-notes (:user-id data) rsp-ch)
         :get-public-notes (println "retrieving public notes" data)

@@ -35,8 +35,8 @@
 
 
 (defn- on-sign-click [ch type owner & evt]
-  (let [username (get-node-value owner "username")
-        password (get-node-value owner "password")]
+  (let [username (clojure.string/trim (get-node-value owner "username"))
+        password (clojure.string/trim (get-node-value owner "password"))]
     (if (clojure.string/blank? username)
       (om/set-state! owner :error-msg "username required!")) ; TODO: correct this
     (if (clojure.string/blank? password)
@@ -100,6 +100,7 @@
     (om/set-state! owner :visibility)))
 
 (defn- on-create-click [owner & evt]
+  ; TODO: validate text (clojure.string/blank? (clojure.string/trim text))
   (put! (om/get-shared owner :srv-ch) {
     :tag :create-note
     :text (get-node-value owner "text")
@@ -135,52 +136,86 @@
 
 
 
-
-
-(defn- on-item-vis-change [cursor srv-ch rsp-ch & evt]
+(defn- on-item-vis-change [cursor owner srv-ch & evt] ;[_id visibility srv-ch rsp-ch & evt]
   ; TODO: some kind of "progress bar element" should be activated
-  (put! srv-ch {
-    :tag :update-note
-    :rsp-ch rsp-ch
-    :note {
-      :note-id (:_id @cursor)
-      :visibility (toggle-visibility (:visibility @cursor))
-    }}))
+  ; TODO: disable visibility change button while operation is pending
+  (let [rsp-ch (chan)]
+    (put! srv-ch {:tag :update-note, :rsp-ch rsp-ch :note {:note-id (:_id @cursor) :visibility (toggle-visibility (:visibility @cursor))}})
+    (go (while true
+      (let [{:keys [ok?] :as res} (<! rsp-ch)]
+        (case ok?
+          ; TODO: re-enable visibility change button
+          true (om/transact! cursor :visibility toggle-visibility) ; TODO: hm... I don't like this
+          false (println "sad face") ; TODO: error msg...
+  ))))))
 
-; (defn- on-item-text-update []
-;   )
+(defn- on-item-delete [cursor owner srv-ch evt-ch & evt]
+  ; TODO: some kind of "progress bar element" should be activated
+  ; TODO: disable delete button while operation is pending
+  (let [rsp-ch (chan)]
+    (put! srv-ch {:tag :delete-note, :rsp-ch rsp-ch, :note-id (:_id @cursor)})
+    (go (while true
+      (let [{:keys [ok?] :as res} (<! rsp-ch)]
+        (case ok?
+          true (put! evt-ch [:destroy @cursor])
+          false (println "sad face") ; TODO: error msg, re-enable delete, etc
+  ))))))
 
-(defcomponent note-item [{:keys [text date visibility] :as cursor} owner]
-  (init-state [_]
-    {:rsp-ch (chan)})
-
-  (will-mount [_]
-    (let [rsp-ch (om/get-state owner :rsp-ch)]
-      (go (while true
-        (let [{:keys [ok?] :as res} (<! rsp-ch)]
-          (case ok?
-            true (om/transact! cursor :visibility toggle-visibility) ; TODO: hm... I don't like this
-            false (println "sad face") ; TODO: error msg...
-          )
+(defcomponent note-item [{:keys [_id text date visibility] :as cursor} owner]
+  (render-state [this {:keys [vis-rsp-ch evt-ch]}]
+    (let [srv-ch (om/get-shared owner :srv-ch)]
+      (dom/li {:class "note"}
+        (dom/div
+          (dom/a {:href (str "/#/notes/" _id)} text)
+          (dom/button {:on-click (partial on-item-delete cursor owner srv-ch evt-ch)} "delete"))
+        (dom/div
+          (dom/span {:class "date"} date)
+          (dom/button {:class "visibility" :on-click (partial on-item-vis-change cursor owner srv-ch)} visibility)
   )))))
 
-  (render-state [this {:keys [rsp-ch]}]
-    (dom/li {:class "note"}
-      (dom/label {:class "label"} text)
-      (dom/span {:class "date"} date)
-      (dom/button {:class "visibility" :on-click (partial on-item-vis-change cursor (om/get-shared owner :srv-ch) rsp-ch)} visibility)
+
+
+(defn- get-notes [app owner]
+  (let [srv-ch (om/get-shared owner :srv-ch)
+        user-id (.getItem js/localStorage :user-id) ; TODO: ew... this should be coming from app-state
+        rsp-ch (chan)]
+    (put! srv-ch {:tag :get-private-notes :rsp-ch rsp-ch :user-id user-id})
+    (go (while true
+      (let [{:keys [ok?] :as res} (<! rsp-ch)]
+        (case ok?
+          true (do
+            (om/transact! app :notes #(vec (concat % (:notes res))))
+            (om/set-state! owner :loading false))
+          false (do
+            (println ":(")) ; TODO: set error msg / click here to try again, etc
+  ))))))
+
+(defn- destroy-note [app owner]
+  (let [evt-ch (om/get-state owner :evt-ch)]
+    (go (while true
+      (let [[evt cursor] (<! evt-ch)]
+        (case evt
+          :destroy (let [id (:_id cursor)]
+            (println "destroy teh " cursor "!")
+            (om/transact! app :notes (fn [notes] (into [] (remove #(= (:_id %) id) notes)))))
+          (println "else!"))
+  )))))
+
+(defcomponent notes-list [{:keys [notes] :as app} owner]
+  (init-state [_]
+    {:loading true :evt-ch (chan)})
+
+  (will-mount [_]
+    ; load initial data
+    (get-notes app owner)
+    (destroy-note app owner)
     )
-  ))
 
-
-
-
-
-(defcomponent notes-list [{:keys [notes]} owner]
-  (render-state [this state]
+  (render-state [_ {:keys [loading evt-ch]}]
+    ; TODO: retrieving data from the server might fail - make view ready for that
     (dom/ul {:class "notes"}
-      (om/build-all note-item notes))
-    )
-  )
-
+      (if loading
+        (dom/span "Loading...")
+        (om/build-all note-item notes {:init-state {:evt-ch evt-ch}}))
+  )))
 
