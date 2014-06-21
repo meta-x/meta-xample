@@ -1,4 +1,5 @@
 (defproject meta-xample "0.1.0"
+  :min-lein-version "2.0.0"
   :description "An example project using paths, enforcer and bodyguard."
   :url "https://github.com/meta-x/meta-xample"
   :license {
