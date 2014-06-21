@@ -12,20 +12,23 @@
 (defcomponent index-view [app _]
   (render-state [_ _]
     (dom/div
-      (om/build sign-buttons app))))
+      (om/build sign-buttons app)))
+  )
 
 (defcomponent sign-view [app owner]
   ; TODO: back button / !sign
   (render-state [_ state]
     (dom/div
-      (om/build sign-in-up app {:init-state state}))))
+      (om/build sign-in-up app {:init-state state})))
+  )
 
 (defcomponent notes-view [app owner]
   ; TODO: link to index
   (render-state [this {:keys [loading evt-ch]}]
     (dom/div
       (om/build note-creator app)
-      (om/build notes-list app))))
+      (om/build notes-list app)))
+  )
 
 (defn- get-note [app owner]
   (let [srv-ch (om/get-shared owner :srv-ch)
@@ -52,7 +55,6 @@
   )))))
 
 (defcomponent note-view [app owner]
-  ; TODO: link to notes
   (init-state [_]
     {:loading true :evt-ch (chan)})
 
@@ -61,6 +63,7 @@
     (destroy-note app owner))
 
   (render-state [this {:keys [loading note-id evt-ch] :as state}]
+    ; TODO: link to notes
     (dom/div
       (if loading
         (dom/span (str "Loading... "))

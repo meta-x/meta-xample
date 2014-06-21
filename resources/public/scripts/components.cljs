@@ -135,7 +135,7 @@
   )))
 
 ; note item component
-(defn- on-item-vis-change [cursor owner srv-ch & evt] ;[_id visibility srv-ch rsp-ch & evt]
+(defn- on-item-vis-change [cursor owner srv-ch & evt]
   ; TODO: some kind of "progress bar element" should be activated
   ; TODO: disable visibility change button while operation is pending
   (let [rsp-ch (chan)]
