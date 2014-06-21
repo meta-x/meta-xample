@@ -16,7 +16,7 @@
     [ring/ring-servlet "1.3.0"]
     [paths "0.1.0-beta4"]
     [enforcer "0.1.0-beta1"]
-    [bodyguard "0.2b"]
+    [bodyguard "0.1.0-beta3"]
 
     [environ "0.5.0"] ; environment variables
     [clj-time "0.7.0"] ; date/time
