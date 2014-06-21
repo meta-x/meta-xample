@@ -35,6 +35,7 @@
   (swap! app-state assoc :current-view-state (first s))
   )
 
+; TODO: routing is still fucked up (next/previous and reloading)
 (defroute "/" [] (set-current-view! :index))
 (defroute "/sign-in" [] (set-current-view! :sign-in))
 (defroute "/sign-up" [] (set-current-view! :sign-up))

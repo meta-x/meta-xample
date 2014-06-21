@@ -10,8 +10,9 @@
     [org.clojure/clojure "1.6.0"]
     [optimus "0.15.0"]
 
-    [ring/ring-core "1.3.0-RC1"]
+    [ring/ring-core "1.3.0"]
     [ring/ring-json "0.3.1"]
+    [ring/ring-servlet "1.3.0"]
     [paths "0.1.0-beta4"]
     [enforcer "0.1.0-beta1"]
     [bodyguard "0.2b"]
