@@ -93,7 +93,5 @@
         :get-note (get-note (:note-id data) rsp-ch)
         :get-private-notes (get-private-notes (:user-id data) rsp-ch)
         :get-public-notes (get-public-notes rsp-ch)
-        (do
-          (println "oops" data)
-          (put! rsp-ch data))
-  )))))
+        ; else
+        (put! rsp-ch data))))))

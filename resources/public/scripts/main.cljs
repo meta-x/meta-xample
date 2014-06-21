@@ -1,11 +1,13 @@
 (ns mx.main
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
             [goog.events :as events]
             [om.core :as om :include-macros true]
-            [cljs.core.async :refer [chan]]
+            [om-tools.core :refer-macros [defcomponent]]
+            [om-tools.dom :as dom :include-macros true]
+            [cljs.core.async :refer [chan <!]]
             [mx.control :as srv-control]
-            [mx.views :refer [index-view sign-view notes-view note-view]]
-  )
+            [mx.views :refer [index-view sign-view notes-view note-view]])
   (:import goog.History
            goog.History.EventType))
 
@@ -18,80 +20,82 @@
 
 (def app-state (atom { ; application state
     :current-view :index ; used to transition between "pages"
-    :authenticated false
+    :current-view-state nil
+    :authenticated? false
     :username nil
     :user-id nil
     :notes []
   }))
-
-(def srv-ch (chan)) ; the shared channel used to communicate upstream with the server-control module
-
-;;; om render functions
-
-(defn- render-index []
-  (om/root
-    index-view
-    app-state
-    {:target (. js/document (getElementById "content"))
-     :shared {:srv-ch srv-ch}
-    }))
-
-(def sign-in-data {:label "Sign In" :type :sign-in})
-(def sign-up-data {:label "Sign Up" :type :sign-up})
-(defn- get-sign-data [in-or-up]
-  (case in-or-up
-    :sign-in sign-in-data
-    :sign-up sign-up-data))
-
-(defn- render-sign [in-or-up]
-  (om/root
-    sign-view
-    app-state
-    {:target (. js/document (getElementById "content"))
-     :shared {:srv-ch srv-ch}
-     :init-state (get-sign-data in-or-up)
-    }))
-
-(defn- render-notes []
-  (om/root
-    notes-view
-    app-state
-    {:target (. js/document (getElementById "content"))
-     :shared {:srv-ch srv-ch}
-    }))
-
-(defn- render-note [id]
-  (om/root
-    note-view
-    app-state
-    {:target (. js/document (getElementById "content"))
-     :shared {:srv-ch srv-ch}
-     :init-state {:note-id id}
-    }))
 
 ;;; routing
 
 (def history (History.))
 
 ; the routes
-(defroute "/" [] (render-index))
-(defroute "/sign-in" [] (render-sign :sign-in))
-(defroute "/sign-up" [] (render-sign :sign-up))
-(defroute "/notes" [] (render-notes))
-(defroute "/notes/:id" [id] (render-note id))
+(defn set-current-view! [v s]
+  (swap! app-state assoc :current-view v)
+  (swap! app-state assoc :current-view-state s)
+  )
 
-;;; wiring
-
-; TODO: create app-level component that manages view transitions? (this)
-
-; setup server controller
-(srv-control/init srv-ch)
+(defroute "/" [] (set-current-view! :index nil))
+(defroute "/sign-in" [] (set-current-view! :sign-in nil))
+(defroute "/sign-up" [] (set-current-view! :sign-up nil))
+(defroute "/notes" []   (set-current-view! :notes nil))
+(defroute "/notes/:id" [id] (set-current-view! :note {:note-id id}))
+(defroute "*" [] (set-current-view! :404 nil))
 
 ; secretary's navigation handler
-(defn- on-navigate [event]
+(defn on-navigate [event]
   (secretary/dispatch! (.-token event)))
 
 ; init navigation
 (doto history
   (events/listen EventType/NAVIGATE on-navigate)
   (.setEnabled true))
+
+;;; the om app
+
+(defn render-page [view {:keys [authenticated?] :as app} protect? & initial-state]
+  (if (and protect? (not authenticated?))
+    (om/build index-view app)
+    (om/build view app {:init-state (first initial-state)})))
+
+(defn next-view [evt]
+  ; state machine for defining the next page view to render
+  (case evt
+    :sign-in :notes
+    :sign-up :notes
+    :sign-out :index
+    :note-delete :notes))
+
+(defcomponent teh-app [{:keys [current-view current-view-state] :as app} owner]
+  (will-mount [_]
+    (go (while true
+      (let [app-ch (om/get-shared owner :app-ch)
+            {:keys [evt args] :as data} (<! app-ch)]
+        (set-current-view! (next-view evt) args)
+  ))))
+
+  (render-state [_ state]
+    (case current-view
+      :index (render-page index-view app false)
+      :sign-in (render-page sign-view app false {:label "Sign In" :type :sign-in})
+      :sign-up (render-page sign-view app false {:label "Sign Up" :type :sign-up})
+      :notes (render-page notes-view app true)
+      ; current-view-state is a cursor! since we can't deref it in render, we need to do this *argh*
+      :note (render-page note-view app true {:note-id (:note-id current-view-state)}) ; TODO: kinda.. public notes can be viewed
+      (dom/div "404") ; TODO: 404
+  )))
+
+;;; wiring
+(let [srv-ch (chan) ; shared channel used to communicate with the server-control module
+      app-ch (chan)] ; shared channel used to communicate upstream with the app component
+  (om/root
+    teh-app
+    app-state
+    {:target (. js/document (getElementById "content"))
+     :shared {:srv-ch srv-ch :app-ch app-ch}
+     :init-state {:app-ch app-ch}})
+
+  ; setup server controller
+  (srv-control/init srv-ch))

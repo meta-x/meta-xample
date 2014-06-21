@@ -4,7 +4,7 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-tools.dom :as dom :include-macros true]
             [cljs.core.async :refer [put! <! chan]]
-  ))
+            [mx.utils :refer [set-current-view!]]))
 
 ;;; helpers
 
@@ -31,7 +31,7 @@
       (dom/a {:href "/#/sign-up"}
         (dom/button nil "Sign Up")))))
 
-; sign out component TODO: tbi
+; sign out component
 (defn- on-sign-out-click [app owner]
   (let [rsp-ch (chan)]
     (put! (om/get-shared owner :srv-ch) {:tag :sign-out :rsp-ch rsp-ch})
@@ -39,9 +39,10 @@
       (let [{:keys [ok? user] :as res} (<! rsp-ch)]
         (case ok?
           true (do
-            (om/update! app :authenticated false)
+            ; TODO: should this component be responsible for this? I don't think so!
+            (om/update! app :authenticated? false)
             (om/update! app :user-id nil)
-            (println "signed out!"))  ; TODO: transition
+            (put! (om/get-shared owner :app-ch) {:evt :sign-out}))
           false (println "uh oh" (:error res)))))))
 
 (defcomponent sign-out-button [app owner]
@@ -61,10 +62,11 @@
       (let [{:keys [ok? user] :as res} (<! rsp-ch)]
         (case ok?
           true (do
+            ; TODO: I don't think this component should be responsible for this
             (om/update! app :user-id (:_id user))
             (om/update! app :username (:username user))
-            (om/update! app :authenticated true)
-            (println "great success!")) ; TODO: transition
+            (om/update! app :authenticated? true)
+            (put! (om/get-shared owner :app-ch) {:evt type}))
           false (om/set-state! owner :error-msg (:error res))))))))
 
 (defn- on-sign-click [app owner type & evt]
@@ -88,8 +90,7 @@
       (dom/input {:type "password" :placeholder "password" :ref "password"})
       (dom/button {:on-click (partial on-sign-click app owner type)} label)
       (dom/div {:class "hidden" :ref "error"} error-msg)
-    ))
-  )
+    )))
 
 ; note creator component
 (defn- on-create-vis-click [owner & evt]
@@ -118,7 +119,7 @@
           (case ok?
             true (do
               (om/set-state! owner :text "") ; TODO: not working because state is not correctly wired to the textarea
-              (om/transact! app :notes #(vec (cons note %)))) ; TODO: hm...
+              (om/transact! app :notes #(vec (cons note %))))
             false (println "sad face") ; TODO: error msg...
           )
     )))))
