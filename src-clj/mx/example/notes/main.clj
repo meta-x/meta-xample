@@ -1,5 +1,6 @@
 (ns mx.example.notes.main
-  (:require [ring.middleware.params :refer [wrap-params]]
+  (:require [environ.core :refer [env]]
+            [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.util.response :refer [response]]
 
@@ -65,6 +66,6 @@
 
   ; (wrap-authorization security-policy)
   ; (wrap-authentication security-policy)
-    (wrap-session {:store (cookie-store {:key "16bytekeyforaes!"})})
+    (wrap-session {:store (cookie-store {:key (env :cookiestore-key)})})
 ;    (wrap-print-response)
   ))

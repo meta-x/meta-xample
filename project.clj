@@ -39,20 +39,22 @@
       ]
     }
   }
+  :source-paths ["src-clj/"]
   :ring {:handler mx.example.notes.main/app}
 
   :cljsbuild {
     :builds {
       :dev {
-        :source-paths ["src-cljs"]
+        :source-paths ["src-cljs/"]
         :compiler {
           :output-to "resources/public/scripts/mx.dev.js"
+          :output-dir "resources/public/scripts/out-dev"
           :optimizations :none
           :source-map true
         }
       }
       :prod {
-        :source-paths ["src-cljs"]
+        :source-paths ["src-cljs/"]
         :compiler {
           :output-to "resources/public/scripts/mx.js"
           :optimizations :advanced
