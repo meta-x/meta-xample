@@ -4,7 +4,7 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-tools.dom :as dom :include-macros true]
             [cljs.core.async :refer [put! <! chan]]
-            [mx.utils :refer [set-current-view!]]))
+  ))
 
 ;;; helpers
 

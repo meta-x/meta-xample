@@ -42,15 +42,26 @@
   :ring {:handler mx.example.notes.main/app}
 
   :cljsbuild {
-    :builds [{
-      :id "dev"
-      :source-paths ["resources/public/scripts"]
-      :compiler {
-        :output-to "resources/public/scripts/out/mx.js"
-        :output-dir "resources/public/scripts/out"
-        :optimizations :none
-        :source-map true
+    :builds {
+      :dev {
+        :source-paths ["src-cljs"]
+        :compiler {
+          :output-to "resources/public/scripts/mx.dev.js"
+          :optimizations :none
+          :source-map true
+        }
       }
-    }]
-  }
-)
+      :prod {
+        :source-paths ["src-cljs"]
+        :compiler {
+          :output-to "resources/public/scripts/mx.js"
+          :optimizations :advanced
+          :elide-asserts true
+          :pretty-print false
+          :output-wrapper false
+          :preamble ["react/react.min.js"]
+          :externs ["react/externs/react.js"]
+        }
+      }
+    }
+  })
