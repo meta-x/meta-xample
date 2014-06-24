@@ -52,7 +52,7 @@
   (->
     routes-tree
     (router-with-tree)
-    ;(wrap-enforcer (bind-query-routes routes-tree))
+    (wrap-enforcer (bind-query-routes-tree routes-tree))
     ;(wrap-print-request)
 
     (wrap-auth-to-params)
@@ -64,8 +64,8 @@
     ; I either need a "softer" way to handle that or something entirely different...
     (wrap-json-response)
 
-  ; (wrap-authorization security-policy)
-  ; (wrap-authentication security-policy)
+    (wrap-authorization security-policy)
+    (wrap-authentication security-policy)
     (wrap-session {:store (cookie-store {:key (env :cookiestore-key)})})
 ;    (wrap-print-response)
   ))

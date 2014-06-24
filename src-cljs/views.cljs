@@ -24,6 +24,7 @@
 
 (defcomponent notes-view [app owner]
   ; TODO: link to index
+  ; TODO: signed in as ...
   (render-state [this {:keys [loading evt-ch]}]
     (dom/div
       (om/build note-creator app)

@@ -15,7 +15,7 @@
     [ring/ring-json "0.3.1"]
     [ring/ring-servlet "1.3.0"]
     [paths "0.1.0-beta4"]
-    [enforcer "0.1.0-beta1"]
+    [enforcer "0.1.0-beta2"]
     [bodyguard "0.1.0-beta3"]
 
     [environ "0.5.0"] ; environment variables

@@ -7,7 +7,7 @@ pom.xml.asc
 *.class
 /.lein-*
 /.nrepl-port
-resources/public/scripts/out*
-resources/public/scripts/mx.js
-resources/public/scripts/mx.dev.js
+/resources/public/scripts/out*
+/resources/public/scripts/mx.js
+/resources/public/scripts/mx.dev.js
 .fuse_*
