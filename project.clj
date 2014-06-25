@@ -21,7 +21,6 @@
     [environ "0.5.0"] ; environment variables
     [clj-time "0.7.0"] ; date/time
     [com.novemberain/monger "2.0.0-rc1"] ; mongodb
-    [com.novemberain/validateur "2.1.0"] ; validation
 
     ; CLOJURESCRIPT
     [org.clojure/clojurescript "0.0-2227"]

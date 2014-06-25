@@ -1,56 +1,86 @@
 (ns mx.example.notes.web.enforcer
-  (:require [clojure.string :refer [blank?]]
+  (:require [clojure.string :refer [blank? trim]]
+            [clojure.set :refer [difference]]
   ))
 
-; USE VALIDATEUR
+; TODO: validate-fail
+; TODO: :coerce-fail
+
+; COERCION
+
+(defn- coerce-role [param arg]
+  (->>
+    arg
+    (map keyword)
+    (set)))
+
+(defn- coerce-visibility [param arg]
+  (keyword arg))
 
 
+; VALIDATION
 
-; TODO: xxx
-; :validate-fail
-; :coerce-fail
+(defn- throw-exception [s]
+  (throw (Exception. s)))
+
+(defn- not-blank-ex [param arg]
+  (if (blank? arg)
+    (throw-exception (str param " is required and cannot be empty"))))
+
+(defn- not-empty-ex [param arg]
+  (if (empty? arg)
+    (throw throw-exception (str param " is required"))))
+
+(def MIN_PASSWORD_LENGTH 8)
+(defn- strong-password-ex [param arg]
+  (< (count arg) MIN_PASSWORD_LENGTH)
+    (throw-exception (str param " must have at least " MIN_PASSWORD_LENGTH " characters")))
+
+(defn- invalid-roles-ex [param arg]
+  (let [roles-diff (difference #{:admin :user} arg)]
+    (if-not (empty? roles-diff)
+      (throw-exception (str param " cannot accept unknown values " roles-diff)))))
+
+(defn- invalid-visibility-ex [param arg]
+  (if (nil? (#{:public :private} arg))
+    (throw-exception (str param " cannot takes unknown value " arg))))
+
+(defn- whitespaces-ex [param arg]
+  (if-not (= arg (trim arg))
+    (throw-exception (str param " cannot start or end with whitespaces"))))
+
 
 (defn validate-username [param arg]
-  ; not blank
-  ; what else to validate?
-  arg
-  )
+  (not-blank-ex param arg)
+  (whitespaces-ex param arg)
+  arg)
 
 (defn validate-password [param arg]
-  ; not blank
-  ; strongness (# chars, etc)
-  arg
-  )
+  (not-blank-ex param arg)
+  (strong-password-ex param arg)
+  arg)
 
 (defn validate-roles [param arg]
-  ; not nil
-  ; :user or :admin
-  arg
-  )
+  (not-empty-ex param arg)
+  (invalid-roles-ex param arg)
+  arg)
 
 (defn validate-user-id [param arg]
-  ; not blank
-  ; has mongodb uuid format
-  arg
-  )
-
-(defn validate-note-visibility [param arg]
-  ; not blank
-  ; :public / :private
-  arg
-  )
+  (not-blank-ex param arg)
+  ; if you want to be picky: check for mongodb uuid format
+  arg)
 
 (defn validate-note-id [param arg]
-  ; not blank
-  ; has mongodb uuid format
-  arg
-  )
+  (not-blank-ex param arg)
+  ; if you want to be picky: check for mongodb uuid format
+  arg)
+
+(defn validate-note-visibility [param arg]
+  (not-blank-ex param arg)
+  (invalid-visibility-ex param arg)
+  (throw-exception "this sucks!")
+  arg)
 
 (defn validate-note-text [param arg]
-  ; not blank
-  arg
-  )
-
-
-
-
+  (not-blank-ex param arg)
+  arg)

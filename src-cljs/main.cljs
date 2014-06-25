@@ -14,8 +14,6 @@
 ; TODO: v2
 ; add support for http://quilljs.com/
 
-; TODO: compile this to production
-
 (enable-console-print!)
 
 ;;; the state

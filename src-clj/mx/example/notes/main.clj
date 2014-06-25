@@ -34,14 +34,12 @@
 
 ; ring app
 
-(defn wrap-print-request
-  [handler]
+(defn wrap-print-request [handler]
   (fn [request]
     (println "------------------ incoming request")
     (println request)
     (handler request)))
-(defn wrap-print-response
-  [handler]
+(defn wrap-print-response [handler]
   (fn [request]
     (let [response (handler request)]
       (println "------------------ outgoing response")
@@ -52,8 +50,8 @@
   (->
     routes-tree
     (router-with-tree)
-    (wrap-enforcer (bind-query-routes-tree routes-tree))
     ;(wrap-print-request)
+    (wrap-enforcer (bind-query-routes-tree routes-tree))
 
     (wrap-auth-to-params)
     (wrap-keyword-params)

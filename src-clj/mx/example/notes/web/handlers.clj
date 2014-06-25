@@ -21,7 +21,7 @@
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} user$post [
   ^{:validate efc/validate-username} username
   ^{:validate efc/validate-password} password
-  ^{:validate efc/validate-roles :name "roles[]"} roles] ; sign up
+  ^{:coerce efc/coerce-roles :validate efc/validate-roles :name "roles[]"} roles] ; sign up
   (if-let [user (s/create-user username password roles)]
     (-> (response user)
         (set-current-auth {:user-id (:_id user) :roles (:roles user)}))
@@ -50,18 +50,21 @@
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} note$post [
   ^{:validate efc/validate-note-text} text
-  ^{:validate efc/validate-note-visibility} visibility
+  ^{:coerce efc/coerce-visibility :validate efc/validate-note-visibility} visibility
   ^{:name :mx.bodyguard.utils/auth} auth] ; create note
   (if-let [note (s/create-note (:user-id auth) text visibility)]
     (response note)
     (-> (response "uh oh, the monkeys broke something")
         (status 500))))
 
-(defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} notes$get
-  ; ([]
-  ;   (s/get-notes-public)) ; get all (public) notes
-  ([^{:name :mx.bodyguard.utils/auth} auth]
-    (response (s/get-notes-user (:user-id auth))))) ; get all (private) notes
+(defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} notes$get [
+  ^{:coerce efc/coerce-visibility :validate efc/validate-note-visibility} visibility
+  ^{:name :mx.bodyguard.utils/auth} auth]
+    (println (keyword visibility))
+
+    (case visibility
+      :public (response (s/get-notes-public)) ; get all (public) notes
+      :private (response (s/get-notes-user (:user-id auth))))) ; get all (private) notes
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} note$get [
   ^{:validate efc/validate-note-id} id] ; get note by id

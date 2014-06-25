@@ -30,17 +30,18 @@
 (defn- sign-out [user-id rsp-ch]
   (sign :sign-out http/delete {:id user-id} rsp-ch))
 
-(defn get-private-notes [user-id rsp-ch]
+(defn get-notes [params rsp-ch]
   (go
-    (let [{:keys [status body]} (<! (http/get "/note" {}))]
+    (let [{:keys [status body]} (<! (http/get "/note" {:query-params params}))]
       (case status
         200 (put! rsp-ch {:ok? true :notes (reverse body)})
         (put! rsp-ch {:ok? false :error body})))))
 
+(defn get-private-notes [user-id rsp-ch]
+  (get-notes {:visibility :private :user-id user-id} rsp-ch))
+
 (defn get-public-notes [rsp-ch]
-  ; TODO: needs backend implementation
-  (println "TODO: not implemented")
-  )
+  (get-notes {:visibility :public} rsp-ch))
 
 (defn create-note [user-id text visibility rsp-ch]
   (go
