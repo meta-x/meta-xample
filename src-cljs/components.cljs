@@ -40,6 +40,7 @@
         (case ok?
           true (do
             ; TODO: should this component be responsible for this? I don't think so!
+            ; this should probably be comunicated back to the root-app
             (om/update! app :authenticated? false)
             (om/update! app :user-id nil)
             (put! (om/get-shared owner :app-ch) {:evt :sign-out}))
@@ -63,6 +64,7 @@
         (case ok?
           true (do
             ; TODO: I don't think this component should be responsible for this
+            ; this should probably be comunicated back to the root-app
             (om/update! app :user-id (:_id user))
             (om/update! app :username (:username user))
             (om/update! app :authenticated? true)
@@ -73,9 +75,9 @@
   (let [username (clojure.string/trim (get-node-value owner "username"))
         password (clojure.string/trim (get-node-value owner "password"))]
     (if (clojure.string/blank? username)
-      (set-error owner "username required!")) ; TODO: correct this
+      (set-error owner "username required!")) ; TODO: xxx
     (if (clojure.string/blank? password)
-      (set-error owner "password required!")) ; TODO: correct this
+      (set-error owner "password required!")) ; TODO: xxx
     ; else-all
     (if (not (or (clojure.string/blank? username) (clojure.string/blank? password)))
       (sign app owner type username password))))
