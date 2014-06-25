@@ -45,36 +45,36 @@
 
 (defn create-note [user-id text visibility rsp-ch]
   (go
-    (let [{:keys [status body]} (<! (http/post "/note" {:query-params {:text text :visibility visibility}}))] ; TODO: change "query-params" - I want form-params
+    (let [{:keys [status body]} (<! (http/post "/note" {:query-params {:user-id user-id :text text :visibility visibility}}))] ; TODO: change "query-params" - I want form-params
       (case status
         200 (put! rsp-ch {:ok? true :note body})
         (put! rsp-ch {:ok? false :error body})))))
 
-(defn- delete-note [note-id rsp-ch]
+(defn- delete-note [user-id note-id rsp-ch]
   (go
-    (let [{:keys [status body]} (<! (http/delete (str "/note/" note-id)))]
+    (let [{:keys [status body]} (<! (http/delete (str "/note/" note-id) {:query-params {:user-id user-id}}))]
       (case status
         200 (put! rsp-ch {:ok? true})
         (put! rsp-ch {:ok? false :error body})))))
 
-(defn- get-update-note-params [{:keys [note-id text visibility] :as note}]
+(defn- get-update-note-params [{:keys [user-id note-id text visibility] :as note}]
   (if-not (or (nil? text) (nil? visibility))
-    {:text text :visibility visibility}
+    {:user-id user-id :text text :visibility visibility}
     (cond
-      (not (nil? text)) {:text text}
-      (not (nil? visibility)) {:visibility visibility}
+      (not (nil? text)) {:user-id user-id :text text}
+      (not (nil? visibility)) {:user-id user-id :visibility visibility}
       :else {})))
 
-(defn- update-note [{:keys [note-id] :as note} rsp-ch]
+(defn- update-note [user-id {:keys [note-id] :as note} rsp-ch]
   (go
     (let [{:keys [status body]} (<! (http/put (str "/note/" note-id) {:query-params (get-update-note-params note)}))]
       (case status
         200 (put! rsp-ch {:ok? true})
         (put! rsp-ch {:ok? false :error body})))))
 
-(defn- get-note [note-id rsp-ch]
+(defn- get-note [user-id note-id rsp-ch]
   (go
-    (let [{:keys [status body] :as srv-rsp} (<! (http/get (str "/note/" note-id)))]
+    (let [{:keys [status body] :as srv-rsp} (<! (http/get (str "/note/" note-id) {:query-params {:user-id user-id}}))]
       (case status
         200 (put! rsp-ch {:ok? true :note body})
         (put! rsp-ch {:ok? false :error body})))))
@@ -89,9 +89,9 @@
         :sign-in (sign-in (:username data) (:password data) rsp-ch)
         :sign-out (sign-out (:user-id data) rsp-ch)
         :create-note (create-note (:user-id data) (:text data) (:visibility data) rsp-ch)
-        :delete-note (delete-note (:note-id data) rsp-ch)
-        :update-note (update-note (:note data) rsp-ch)
-        :get-note (get-note (:note-id data) rsp-ch)
+        :delete-note (delete-note (:user-id data) (:note-id data) rsp-ch)
+        :update-note (update-note (:user-id data) (:note data) rsp-ch)
+        :get-note (get-note (:user-id data) (:note-id data) rsp-ch)
         :get-private-notes (get-private-notes (:user-id data) rsp-ch)
         :get-public-notes (get-public-notes rsp-ch)
         ; else

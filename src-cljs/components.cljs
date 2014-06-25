@@ -32,9 +32,9 @@
         (dom/button nil "Sign Up")))))
 
 ; sign out component
-(defn- on-sign-out-click [app owner]
+(defn- on-sign-out-click [app owner user-id]
   (let [rsp-ch (chan)]
-    (put! (om/get-shared owner :srv-ch) {:tag :sign-out :rsp-ch rsp-ch})
+    (put! (om/get-shared owner :srv-ch) {:tag :sign-out :rsp-ch rsp-ch :user-id user-id})
     (go
       (let [{:keys [ok? user] :as res} (<! rsp-ch)]
         (case ok?
@@ -46,9 +46,9 @@
           false (println "uh oh" (:error res)))))))
 
 (defcomponent sign-out-button [app owner]
-  (render-state [_ _]
+  (render-state [_ {:keys [user-id]}]
     (dom/div
-      (dom/button {:on-click (partial on-sign-out-click app owner)} "Sign Out"))))
+      (dom/button {:on-click (partial on-sign-out-click app owner user-id)} "Sign Out"))))
 
 ; sign in/up component
 (defn- set-error [owner msg]
@@ -99,16 +99,17 @@
     (toggle-visibility)
     (om/set-state! owner :visibility)))
 
-(defn- on-create-click [owner & evt]
+(defn- on-create-click [user-id owner & evt]
   ; TODO: validate text (clojure.string/blank? (clojure.string/trim text))
   (put! (om/get-shared owner :srv-ch) {
     :tag :create-note
     :text (get-node-value owner "text")
     :visibility (om/get-state owner :visibility)
     :rsp-ch (om/get-state owner :rsp-ch)
+    :user-id user-id
   }))
 
-(defcomponent note-creator [app owner]
+(defcomponent note-creator [{:keys [user-id] :as app} owner]
   (init-state [_]
     {:text "" :visibility "private" :rsp-ch (chan)})
 
@@ -131,15 +132,15 @@
       ; -text- is not being set when textarea is changed
       (dom/textarea {:rows 5 :columns 20 :ref "text" :placeholder "Don't forget, create a note..." });:value text})
       (dom/button {:ref "visibility" :on-click (partial on-create-vis-click owner)} visibility)
-      (dom/button {:on-click (partial on-create-click owner)} "create!")
+      (dom/button {:on-click (partial on-create-click user-id owner)} "create!")
   )))
 
 ; note item component
-(defn- on-item-vis-change [cursor owner srv-ch & evt]
+(defn- on-item-vis-change [cursor owner srv-ch user-id & evt]
   ; TODO: some kind of "progress bar element" should be activated
   ; TODO: disable visibility change button while operation is pending
   (let [rsp-ch (chan)]
-    (put! srv-ch {:tag :update-note, :rsp-ch rsp-ch :note {:note-id (:_id @cursor) :visibility (toggle-visibility (:visibility @cursor))}})
+    (put! srv-ch {:tag :update-note :rsp-ch rsp-ch :user-id user-id :note {:note-id (:_id @cursor) :visibility (toggle-visibility (:visibility @cursor))}})
     (go (while true
       (let [{:keys [ok?] :as res} (<! rsp-ch)]
         (case ok?
@@ -148,11 +149,11 @@
           false (println "sad face") ; TODO: error msg...
   ))))))
 
-(defn- on-item-delete [cursor owner srv-ch evt-ch & evt]
+(defn- on-item-delete [cursor owner srv-ch evt-ch user-id & evt]
   ; TODO: some kind of "progress bar element" should be activated
   ; TODO: disable delete button while operation is pending
   (let [rsp-ch (chan)]
-    (put! srv-ch {:tag :delete-note, :rsp-ch rsp-ch, :note-id (:_id @cursor)})
+    (put! srv-ch {:tag :delete-note :rsp-ch rsp-ch :user-id user-id :note-id (:_id @cursor)})
     (go (while true
       (let [{:keys [ok?] :as res} (<! rsp-ch)]
         (case ok?
@@ -161,21 +162,20 @@
   ))))))
 
 (defcomponent note-item [{:keys [_id text date visibility] :as cursor} owner]
-  (render-state [this {:keys [vis-rsp-ch evt-ch]}]
+  (render-state [this {:keys [vis-rsp-ch evt-ch user-id]}]
     (let [srv-ch (om/get-shared owner :srv-ch)]
       (dom/li {:class "note"}
         (dom/div
           (dom/a {:href (str "/#/notes/" _id)} text)
-          (dom/button {:on-click (partial on-item-delete cursor owner srv-ch evt-ch)} "delete"))
+          (dom/button {:on-click (partial on-item-delete cursor owner srv-ch evt-ch user-id)} "delete"))
         (dom/div
           (dom/span {:class "date"} date)
-          (dom/button {:class "visibility" :on-click (partial on-item-vis-change cursor owner srv-ch)} visibility)
+          (dom/button {:class "visibility" :on-click (partial on-item-vis-change cursor owner srv-ch user-id)} visibility)
   )))))
 
 ; notes list component
-(defn- get-notes [app owner]
+(defn- get-notes [{:keys [user-id] :as app} owner]
   (let [srv-ch (om/get-shared owner :srv-ch)
-        user-id (.getItem js/localStorage :user-id) ; TODO: ew... this should be coming from app-state
         rsp-ch (chan)]
     (put! srv-ch {:tag :get-private-notes :rsp-ch rsp-ch :user-id user-id})
     (go (while true

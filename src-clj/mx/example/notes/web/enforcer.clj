@@ -1,6 +1,7 @@
 (ns mx.example.notes.web.enforcer
   (:require [clojure.string :refer [blank? trim]]
-            [clojure.set :refer [difference]]))
+            [clojure.set :refer [difference]]
+            [ring.util.response :refer [response status]]))
 
 ; TODO: validate-fail
 ; TODO: :coerce-fail
@@ -81,3 +82,11 @@
 (defn validate-note-text [param arg]
   (not-blank-ex param arg)
   arg)
+
+
+
+(defn invalid-auth? [user-id auth]
+  (if-not (= (:user-id auth) user-id)
+    (-> (response "who are you and what are you trying to do?")
+        (status 403))))
+
