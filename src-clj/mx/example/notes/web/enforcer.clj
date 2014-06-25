@@ -1,22 +1,20 @@
 (ns mx.example.notes.web.enforcer
   (:require [clojure.string :refer [blank? trim]]
-            [clojure.set :refer [difference]]
-  ))
+            [clojure.set :refer [difference]]))
 
 ; TODO: validate-fail
 ; TODO: :coerce-fail
 
 ; COERCION
 
-(defn- coerce-role [param arg]
+(defn coerce-role [param arg]
   (->>
     arg
     (map keyword)
     (set)))
 
-(defn- coerce-visibility [param arg]
+(defn coerce-visibility [param arg]
   (keyword arg))
-
 
 ; VALIDATION
 
@@ -76,9 +74,8 @@
   arg)
 
 (defn validate-note-visibility [param arg]
-  (not-blank-ex param arg)
+  ;(not-blank-ex param arg)
   (invalid-visibility-ex param arg)
-  (throw-exception "this sucks!")
   arg)
 
 (defn validate-note-text [param arg]

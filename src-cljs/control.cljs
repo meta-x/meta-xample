@@ -38,10 +38,10 @@
         (put! rsp-ch {:ok? false :error body})))))
 
 (defn get-private-notes [user-id rsp-ch]
-  (get-notes {:visibility :private :user-id user-id} rsp-ch))
+  (get-notes {:visibility "private" :user-id user-id} rsp-ch))
 
 (defn get-public-notes [rsp-ch]
-  (get-notes {:visibility :public} rsp-ch))
+  (get-notes {:visibility "public"} rsp-ch))
 
 (defn create-note [user-id text visibility rsp-ch]
   (go

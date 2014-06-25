@@ -2,7 +2,7 @@
   (:require [ring.util.response :refer [response status resource-response]]
             [mx.example.notes.service :as s]
             [mx.bodyguard.utils :refer [get-current-auth set-current-auth del-current-auth]]
-            [mx.example.notes.web.enforcer :as efc]))
+            [mx.example.notes.web.enforcer :refer [coerce-role coerce-visibility validate-username validate-password validate-roles validate-user-id validate-note-id validate-note-visibility validate-note-text]]))
 
 ; TODO: in the handlers that require the user-id, it should not be extracted from the auth, but explicitely sent and used
 ; auth-obj will be used bodyguard (???) and it should not be assumed that all strategies will have the user-id present in auth-obj
@@ -19,18 +19,16 @@
 ; user
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} user$post [
-  ^{:validate efc/validate-username} username
-  ^{:validate efc/validate-password} password
-  ^{:coerce efc/coerce-roles :validate efc/validate-roles :name "roles[]"} roles] ; sign up
+  ^{:validate validate-username} username
+  ^{:validate validate-password} password
+  ^{:coerce coerce-roles :validate validate-roles :name "roles[]"} roles] ; sign up
   (if-let [user (s/create-user username password roles)]
     (-> (response user)
         (set-current-auth {:user-id (:_id user) :roles (:roles user)}))
     (-> (response "could not create user")
         (status 400))))
 
-(defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} user-session$post [
-  ^{:validate efc/validate-username} username
-  ^{:validate efc/validate-password} password] ; sign in
+(defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} user-session$post [username password] ; sign in
   (if-let [user (s/authenticate-user username password)]
     (-> (response user)
         (set-current-auth {:user-id (:_id user) :roles (:roles user)}))
@@ -38,7 +36,7 @@
         (status 404))))
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} user-session$delete [
-  ^{:validate efc/validate-user-id} id
+  ^{:validate validate-user-id} id
   ^{:name :mx.bodyguard.utils/auth} auth] ; sign out
   ; TODO: you can't just delete everything
   ; del-current-auth has to delete the "current" session
@@ -49,8 +47,8 @@
 ; notes
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} note$post [
-  ^{:validate efc/validate-note-text} text
-  ^{:coerce efc/coerce-visibility :validate efc/validate-note-visibility} visibility
+  ^{:validate validate-note-text} text
+  ^{:coerce coerce-visibility :validate validate-note-visibility} visibility
   ^{:name :mx.bodyguard.utils/auth} auth] ; create note
   (if-let [note (s/create-note (:user-id auth) text visibility)]
     (response note)
@@ -58,32 +56,31 @@
         (status 500))))
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} notes$get [
-  ^{:coerce efc/coerce-visibility :validate efc/validate-note-visibility} visibility
+  ^{:coerce coerce-visibility :validate validate-note-visibility} visibility
   ^{:name :mx.bodyguard.utils/auth} auth]
-    (println (keyword visibility))
 
     (case visibility
       :public (response (s/get-notes-public)) ; get all (public) notes
       :private (response (s/get-notes-user (:user-id auth))))) ; get all (private) notes
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} note$get [
-  ^{:validate efc/validate-note-id} id] ; get note by id
+  ^{:validate validate-note-id} id] ; get note by id
   (if-let [note (s/get-note id)]
     (response note)
     (-> (response "uh oh, what exactly are you looking for?")
         (status 404))))
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} note$put [
-  ^{:validate efc/validate-note-id} id
-  ^{:validate efc/validate-note-text} text
-  ^{:validate efc/validate-note-visibility} visibility] ; update note
+  ^{:validate validate-note-id} id
+  text
+  ^{:coerce coerce-visibility} visibility] ; update note
   (if (not (nil? text))
     (response (s/update-note-text id text)))
   (if (not (nil? visibility))
     (response (s/update-note-visibility id visibility))))
 
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} note$delete [
-  ^{:validate efc/validate-note-id} id] ; delete note
+  ^{:validate validate-note-id} id] ; delete note
   (if (s/delete-note id)
     (response {:success :ok :msg "farewell note"})
     (-> (response "uh oh, won't you help a brother out?")
