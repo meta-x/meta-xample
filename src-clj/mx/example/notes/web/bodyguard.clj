@@ -5,7 +5,7 @@
   {
     :default-access :anon ; :auth|:anon - default protection for non-specified routes
     :routes { ; map with routes and required roles; {#"uri" :any} | {:roles #{:admin} :methods #{:post}}
-      #"/note.*$" :any
+      #"/note.*$" {:methods #{:post :put :delete} :roles #{:admin :user}}
       #"/admin.*$" #{:admin}
     }
     :on-authentication-fail (fn [request] {:status 401 :body "you must authenticate yourself in order to access this resource"})

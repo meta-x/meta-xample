@@ -164,7 +164,7 @@
   ))))))
 
 (defcomponent note-item [{:keys [_id text date visibility] :as cursor} owner]
-  (render-state [this {:keys [vis-rsp-ch evt-ch user-id]}]
+  (render-state [this {:keys [evt-ch user-id]}]
     (let [srv-ch (om/get-shared owner :srv-ch)]
       (dom/li {:class "note"}
         (dom/div
@@ -199,7 +199,7 @@
           (println "else!"))
   )))))
 
-(defcomponent notes-list [{:keys [notes] :as app} owner]
+(defcomponent notes-list [{:keys [notes user-id] :as app} owner]
   (init-state [_]
     {:loading true :evt-ch (chan)})
 
@@ -212,5 +212,5 @@
     (dom/ul {:class "notes"}
       (if loading
         (dom/span "Loading...")
-        (om/build-all note-item notes {:init-state {:evt-ch evt-ch}}))
+        (om/build-all note-item notes {:init-state {:evt-ch evt-ch :user-id user-id}}))
   )))

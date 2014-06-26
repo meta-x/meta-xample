@@ -9,6 +9,7 @@
   :dependencies [
     ; CLOJURE
     [org.clojure/clojure "1.6.0"]
+    ;[org.clojure/core.async "0.1.303.0-886421-alpha"]
     [optimus "0.15.0"]
 
     [ring/ring-core "1.3.0"]
@@ -27,7 +28,7 @@
     [om "0.6.4"]
     [prismatic/om-tools "0.2.1"]
     [secretary "1.1.1"]
-    [cljs-http "0.1.11"]
+    [cljs-http "0.1.12"]
   ]
   :profiles {
     :dev {

@@ -22,7 +22,8 @@
         (put! rsp-ch {:ok? false :error body}))))) ; else, error, notify child
 
 (defn- sign-up [user pass rsp-ch]
-  (sign :sign-up http/post {:username user :password pass} rsp-ch))
+  ; TODO: verify this when :form-params becomes available (i.e. if roles works?)
+  (sign :sign-up http/post {:username user :password pass :roles #{:user :admin}} rsp-ch))
 
 (defn- sign-in [user pass rsp-ch]
   (sign :sign-in http/post {:username user :password pass} rsp-ch))
@@ -57,7 +58,7 @@
         200 (put! rsp-ch {:ok? true})
         (put! rsp-ch {:ok? false :error body})))))
 
-(defn- get-update-note-params [{:keys [user-id note-id text visibility] :as note}]
+(defn- get-update-note-params [user-id {:keys [note-id text visibility] :as note}]
   (if-not (or (nil? text) (nil? visibility))
     {:user-id user-id :text text :visibility visibility}
     (cond
@@ -67,7 +68,7 @@
 
 (defn- update-note [user-id {:keys [note-id] :as note} rsp-ch]
   (go
-    (let [{:keys [status body]} (<! (http/put (str "/note/" note-id) {:query-params (get-update-note-params note)}))]
+    (let [{:keys [status body]} (<! (http/put (str "/note/" note-id) {:query-params (get-update-note-params user-id note)}))]
       (case status
         200 (put! rsp-ch {:ok? true})
         (put! rsp-ch {:ok? false :error body})))))

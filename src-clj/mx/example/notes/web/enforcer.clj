@@ -32,8 +32,8 @@
 
 (def MIN_PASSWORD_LENGTH 8)
 (defn- strong-password-ex [param arg]
-  (< (count arg) MIN_PASSWORD_LENGTH)
-    (throw-exception (str param " must have at least " MIN_PASSWORD_LENGTH " characters")))
+  (if (< (count arg) MIN_PASSWORD_LENGTH)
+    (throw-exception (str param " must have at least " MIN_PASSWORD_LENGTH " characters"))))
 
 (defn- invalid-roles-ex [param arg]
   (let [roles-diff (difference #{:admin :user} arg)]
@@ -90,3 +90,7 @@
     (-> (response "who are you and what are you trying to do?")
         (status 403))))
 
+(defmacro when-auth-matches [user-id auth-obj & body]
+  `(if-let [invalid-auth# (invalid-auth? ~user-id ~auth-obj)]
+    invalid-auth#
+    (do ~@body)))
