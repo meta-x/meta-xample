@@ -9,16 +9,12 @@
   :dependencies [
     ; CLOJURE
     [org.clojure/clojure "1.6.0"]
-    ;[org.clojure/core.async "0.1.303.0-886421-alpha"]
-    [optimus "0.15.0"]
-
     [ring/ring-core "1.3.0"]
     [ring/ring-json "0.3.1"]
     [ring/ring-servlet "1.3.0"]
     [paths "0.1.0-beta4"]
     [enforcer "0.1.0-beta3"]
     [bodyguard "0.1.0-beta3"]
-
     [environ "0.5.0"] ; environment variables
     [clj-time "0.7.0"] ; date/time
     [com.novemberain/monger "2.0.0-rc1"] ; mongodb
@@ -27,7 +23,7 @@
     [org.clojure/clojurescript "0.0-2227"]
     [om "0.6.4"]
     [prismatic/om-tools "0.2.1"]
-    [secretary "1.1.1"]
+    [secretary "1.2.0"]
     [cljs-http "0.1.12"]
   ]
   :profiles {

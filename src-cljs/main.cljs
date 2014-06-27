@@ -11,9 +11,6 @@
   (:import goog.History
            goog.History.EventType))
 
-; TODO: v2
-; add support for http://quilljs.com/
-
 (enable-console-print!)
 
 ;;; the state
@@ -34,13 +31,12 @@
   (swap! app-state assoc :current-view v)
   (swap! app-state assoc :current-view-state (first s)))
 
-; TODO: routing is still fucked up (next/previous and reloading)
-(defroute "/" [] (set-current-view! :index))
-(defroute "/sign-in" [] (set-current-view! :sign-in))
-(defroute "/sign-up" [] (set-current-view! :sign-up))
-(defroute "/notes" []   (set-current-view! :notes))
-(defroute "/notes/:id" [id] (set-current-view! :note {:note-id id}))
-(defroute "*" [] (set-current-view! :404))
+(defroute r-index "/" [] (set-current-view! :index))
+(defroute r-sign-in "/sign-in" [] (set-current-view! :sign-in))
+(defroute r-sign-up "/sign-up" [] (set-current-view! :sign-up))
+(defroute r-notes "/notes" []   (set-current-view! :notes))
+(defroute r-note "/notes/:id" [id] (set-current-view! :note {:note-id id}))
+(defroute r-404 "*" [] (set-current-view! :404))
 
 ; secretary's navigation handler
 (defn on-navigate [event]
@@ -54,30 +50,36 @@
 ;;; the om app
 (defn render-page [view {:keys [authenticated?] :as app} protect? & initial-state]
   (if (and protect? (not authenticated?))
-    (om/build index-view app)
+    (om/build index-view app) ; default view for protected pages when user is not authed | TODO: ideally you'd set some message
     (om/build view app {:init-state (first initial-state)})))
 
-(defn next-view [evt]
+(defn next-route [evt]
   ; state machine for defining the next page view to render
+  ; returns the named route for the next view
+  ; TODO: this is awful. it's assuming there's only one next alternative
+  ; that can be achieved by having :p1-1, :p1-2 but it's just awful
   (case evt
-    :sign-in :notes
-    :sign-up :notes
-    :sign-out :index
-    :note-delete :notes))
+    :sign-in r-notes
+    :sign-up r-notes
+    :sign-out r-index
+    :note-delete r-notes))
 
 (defcomponent teh-app [{:keys [current-view current-view-state] :as app} owner]
-  ; this component is responsible for deciding what to render
-  ; serves as a counterpart to secretary TODO: which isn't exactly what I want ...
+  ; this component is responsible for deciding what to render - complements secretary
 
   (will-mount [_]
-    (go (while true
-      (let [app-ch (om/get-shared owner :app-ch)
-            {:keys [evt args] :as data} (<! app-ch)]
-        (set-current-view! (next-view evt) args)
-  ))))
+    (let [app-ch (om/get-shared owner :app-ch)]
+      (go (while true
+        (let [{:keys [evt args] :as data} (<! app-ch)
+              next-route (next-route evt)
+              next-url (next-route args)]
+          ; changing the app's "context" (i.e. url+view) from within
+          ; i.e. an internal event is requesting a change
+          (set! (.-hash js/window.location) next-url)
+    )))))
 
   (render-state [_ state]
-    (case current-view ; TODO: there's still a bug with a mismatch between current-view and location.href
+    (case current-view
       :index (render-page index-view app false)
       :sign-in (render-page sign-view app false {:label "Sign In" :type :sign-in})
       :sign-up (render-page sign-view app false {:label "Sign Up" :type :sign-up})
