@@ -121,7 +121,7 @@
         (let [{:keys [ok? note] :as res} (<! rsp-ch)]
           (case ok?
             true (do
-              (om/set-state! owner :text "") ; TODO: not working because state is not correctly wired to the textarea
+              (om/set-state! owner :text "")
               (om/transact! app :notes #(vec (cons note %))))
             false (println "sad face") ; TODO: error msg...
           )
@@ -129,10 +129,7 @@
 
   (render-state [this {:keys [text visibility rsp-ch]}]
     (dom/div
-      ; TODO: we need to wire the textarea to our state so on-create-click views the most up to date data
-      ; set-state! when the textarea is being edited.. but that's a bit inneficient, no?
-      ; -text- is not being set when textarea is changed
-      (dom/textarea {:rows 5 :columns 20 :ref "text" :placeholder "Don't forget, create a note..." });:value text})
+      (dom/textarea {:rows 5 :columns 20 :ref "text" :placeholder "Don't forget, create a note..." :value text :on-change #(om/set-state! owner :text (.. % -target -value))})
       (dom/button {:ref "visibility" :on-click (partial on-create-vis-click owner)} visibility)
       (dom/button {:on-click (partial on-create-click user-id owner)} "create!")
   )))
