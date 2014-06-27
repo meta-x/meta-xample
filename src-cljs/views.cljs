@@ -4,8 +4,7 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-tools.dom :as dom :include-macros true]
             [cljs.core.async :refer [chan <! put!]]
-            [mx.components :refer [sign-buttons sign-out-button sign-in-up note-creator notes-list note-item]]
-            [cljs-http.client :as http]))
+            [mx.components :refer [sign-buttons sign-out-button sign-in-up note-creator notes-list note-item]]))
 
 ;;; views
 

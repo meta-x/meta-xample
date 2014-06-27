@@ -1,9 +1,7 @@
 (ns mx.control
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [om.core :as om]
-            [cljs.core.async :refer [chan <! put!]]
-            [cljs-http.client :as http]
-  ))
+  (:require [cljs.core.async :refer [chan <! put!]]
+            [cljs-http.client :as http]))
 
 ;;; server operations
 
@@ -22,7 +20,7 @@
         (put! rsp-ch {:ok? false :error body}))))) ; else, error, notify child
 
 (defn- sign-up [user pass rsp-ch]
-  ; TODO: verify this when :form-params becomes available (i.e. if roles works?)
+  ; TODO: verify if this is correct when :form-params becomes available (i.e. if roles works?)
   (sign :sign-up http/post {:username user :password pass :roles #{:user :admin}} rsp-ch))
 
 (defn- sign-in [user pass rsp-ch]
@@ -82,7 +80,7 @@
 
 ;;; server control
 
-(defn init [ch]
+(defn init! [ch]
   (go (while true
     (let [{:keys [tag rsp-ch] :as data} (<! ch)]
       (case tag

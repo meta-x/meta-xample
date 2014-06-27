@@ -5,14 +5,7 @@
             [mx.example.notes.web.enforcer :refer [when-auth-matches coerce-role coerce-visibility validate-username validate-password validate-roles validate-user-id validate-note-id validate-note-visibility validate-note-text]]))
 
 (defn index [request]
-  ; TODO: change render strategy into 2 pages
-  ; sign in/up page and notes/note page
-  ; this requires "refactor" of the SPA
-  ;
-  ; (if (nil? (get-current-auth request))
-  ;   (resource-response "templates/sign.html")
-  ;   (resource-response "templates/notes.html")))
-    (resource-response "templates/index.html"))
+  (resource-response "templates/index.html"))
 
 ; user
 

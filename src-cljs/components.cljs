@@ -3,8 +3,7 @@
   (:require [om.core :as om]
             [om-tools.core :refer-macros [defcomponent]]
             [om-tools.dom :as dom :include-macros true]
-            [cljs.core.async :refer [put! <! chan]]
-  ))
+            [cljs.core.async :refer [put! <! chan]]))
 
 ;;; helpers
 

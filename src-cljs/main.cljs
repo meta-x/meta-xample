@@ -32,8 +32,7 @@
 ; the routes
 (defn set-current-view! [v & s]
   (swap! app-state assoc :current-view v)
-  (swap! app-state assoc :current-view-state (first s))
-  )
+  (swap! app-state assoc :current-view-state (first s)))
 
 ; TODO: routing is still fucked up (next/previous and reloading)
 (defroute "/" [] (set-current-view! :index))
@@ -67,6 +66,9 @@
     :note-delete :notes))
 
 (defcomponent teh-app [{:keys [current-view current-view-state] :as app} owner]
+  ; this component is responsible for deciding what to render
+  ; serves as a counterpart to secretary TODO: which isn't exactly what I want ...
+
   (will-mount [_]
     (go (while true
       (let [app-ch (om/get-shared owner :app-ch)
@@ -92,8 +94,7 @@
     teh-app
     app-state
     {:target (. js/document (getElementById "content"))
-     :shared {:srv-ch srv-ch :app-ch app-ch}
-     :init-state {:app-ch app-ch}})
+     :shared {:srv-ch srv-ch :app-ch app-ch}})
 
   ; setup server controller
-  (srv-control/init srv-ch))
+  (srv-control/init! srv-ch))
