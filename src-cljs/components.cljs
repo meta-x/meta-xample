@@ -32,6 +32,7 @@
 
 ; sign out component
 (defn- on-sign-out-click [app owner user-id]
+  (.restart js/Pace) ; active progress bar
   (let [rsp-ch (chan)]
     (put! (om/get-shared owner :srv-ch) {:tag :sign-out :rsp-ch rsp-ch :user-id user-id})
     (go
@@ -55,6 +56,7 @@
   (om/set-state! owner :error-msg msg))
 
 (defn- sign [app owner type username password]
+  (.restart js/Pace) ; active progress bar
   (let [rsp-ch (chan)]
     (set-error owner "") ; clear error
     (put! (om/get-shared owner :srv-ch) {:tag type :username username :password password :rsp-ch rsp-ch})
@@ -101,6 +103,7 @@
     (om/set-state! owner :visibility)))
 
 (defn- on-create-click [user-id owner & evt]
+  (.restart js/Pace) ; active progress bar
   ; TODO: validate text (clojure.string/blank? (clojure.string/trim text))
   (put! (om/get-shared owner :srv-ch) {
     :tag :create-note
@@ -135,8 +138,8 @@
 
 ; note item component
 (defn- on-item-vis-change [cursor owner srv-ch user-id & evt]
-  ; TODO: some kind of "progress bar element" should be activated
   ; TODO: disable visibility change button while operation is pending
+  (.restart js/Pace) ; active progress bar
   (let [rsp-ch (chan)]
     (put! srv-ch {:tag :update-note :rsp-ch rsp-ch :user-id user-id :note {:note-id (:_id @cursor) :visibility (toggle-visibility (:visibility @cursor))}})
     (go (while true
@@ -148,8 +151,8 @@
   ))))))
 
 (defn- on-item-delete [cursor owner srv-ch evt-ch user-id & evt]
-  ; TODO: some kind of "progress bar element" should be activated
   ; TODO: disable delete button while operation is pending
+  (.restart js/Pace) ; active progress bar
   (let [rsp-ch (chan)]
     (put! srv-ch {:tag :delete-note :rsp-ch rsp-ch :user-id user-id :note-id (:_id @cursor)})
     (go (while true
