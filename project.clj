@@ -24,7 +24,7 @@
     [om "0.6.4"]
     [prismatic/om-tools "0.2.1"]
     [secretary "1.2.0"]
-    [cljs-http "0.1.12"]
+    [cljs-http "0.1.13"]
   ]
   :profiles {
     :dev {

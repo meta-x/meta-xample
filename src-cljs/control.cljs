@@ -14,14 +14,15 @@
 (defn- sign [type method params rsp-ch]
   (go
     (let [url (get-sign-url type)
-          {:keys [status body] :as srv-rsp} (<! (method url {:query-params params}))] ; TODO: change "query-params" - I want form-params
+          {:keys [status body] :as srv-rsp} (<! (method url {:form-params params}))]
       (case status
         200 (put! rsp-ch {:ok? true :user body})
         (put! rsp-ch {:ok? false :error body}))))) ; else, error, notify child
 
 (defn- sign-up [user pass rsp-ch]
-  ; TODO: verify if this is correct when :form-params becomes available (i.e. if roles works?)
-  (sign :sign-up http/post {:username user :password pass :roles #{:user :admin}} rsp-ch))
+  ; TODO: this isn't working. is the problem in the backend or in the frontend?
+  ; TODO: probably backend requires a middleware that parses array arguments correctly
+  (sign :sign-up http/post {:username user :password pass :roles [:user :admin]} rsp-ch))
 
 (defn- sign-in [user pass rsp-ch]
   (sign :sign-in http/post {:username user :password pass} rsp-ch))
@@ -44,7 +45,7 @@
 
 (defn create-note [user-id text visibility rsp-ch]
   (go
-    (let [{:keys [status body]} (<! (http/post "/note" {:query-params {:user-id user-id :text text :visibility visibility}}))] ; TODO: change "query-params" - I want form-params
+    (let [{:keys [status body]} (<! (http/post "/note" {:form-params {:user-id user-id :text text :visibility visibility}}))]
       (case status
         200 (put! rsp-ch {:ok? true :note body})
         (put! rsp-ch {:ok? false :error body})))))

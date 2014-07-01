@@ -6,7 +6,7 @@ Also served as a learning tool for Clojurescript (and Om).
 
 ## Status
 
-Functional, but frontend still has many some bugs, does not have a perfect UI/UX and lacks styling.
+Functional, but frontend does not have a perfect UI/UX and lacks styling.
 
 ## Live Demo
 
@@ -24,6 +24,17 @@ Before running, you'll need to set [environ](https://github.com/weavejester/envi
 ## How things work
 
 TODO
+
+### Project Organization
+; TODO: explain Amit's DDD
+
+### Backend
+
+### Frontend
+
+#### Clojurescript
+
+#### Om/core.async
 
 ## License
 

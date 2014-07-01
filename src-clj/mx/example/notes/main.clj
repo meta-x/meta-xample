@@ -67,3 +67,7 @@
     (wrap-session {:store (cookie-store {:key (env :cookiestore-key)})})
 ;    (wrap-print-response)
   ))
+
+; TODO:
+; - add a msg in the initial view of the goal of this project
+; - add a link to a downloadable file...
