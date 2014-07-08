@@ -129,7 +129,7 @@
           )
     )))))
 
-  (render-state [this {:keys [text visibility rsp-ch]}]
+  (render-state [this {:keys [text visibility]}]
     (dom/div
       (dom/textarea {:rows 5 :columns 20 :ref "text" :placeholder "Don't forget, create a note..." :value text :on-change #(om/set-state! owner :text (.. % -target -value))})
       (dom/button {:ref "visibility" :on-click (partial on-create-vis-click owner)} visibility)

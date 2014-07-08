@@ -20,8 +20,6 @@
         (put! rsp-ch {:ok? false :error body}))))) ; else, error, notify child
 
 (defn- sign-up [user pass rsp-ch]
-  ; TODO: this isn't working. is the problem in the backend or in the frontend?
-  ; TODO: probably backend requires a middleware that parses array arguments correctly
   (sign :sign-up http/post {:username user :password pass :roles [:user :admin]} rsp-ch))
 
 (defn- sign-in [user pass rsp-ch]

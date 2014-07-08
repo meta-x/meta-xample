@@ -2,7 +2,7 @@
   (:require [ring.util.response :refer [response status resource-response]]
             [mx.example.notes.service :as s]
             [mx.bodyguard.utils :refer [get-current-auth set-current-auth del-current-auth]]
-            [mx.example.notes.web.enforcer :refer [when-auth-matches coerce-role coerce-visibility validate-username validate-password validate-roles validate-user-id validate-note-id validate-note-visibility validate-note-text]]))
+            [mx.example.notes.web.enforcer :refer [when-auth-matches coerce-roles coerce-visibility validate-username validate-password validate-roles validate-user-id validate-note-id validate-note-visibility validate-note-text]]))
 
 (defn index [request]
   (resource-response "templates/index.html"))
@@ -12,7 +12,7 @@
 (defn ^{:enforcer-ns 'mx.example.notes.web.enforcer} user$post [
   ^{:validate validate-username} username
   ^{:validate validate-password} password
-  ^{:coerce coerce-roles :validate validate-roles :name "roles[]"} roles] ; sign up
+  ^{:coerce coerce-roles :validate validate-roles} roles] ; sign up
   (if-let [user (s/create-user username password roles)]
     (-> (response user)
         (set-current-auth {:user-id (:_id user) :roles (:roles user)}))

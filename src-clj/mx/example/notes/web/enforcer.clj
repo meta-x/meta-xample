@@ -8,7 +8,7 @@
 
 ; COERCION
 
-(defn coerce-role [param arg]
+(defn coerce-roles [param arg]
   (->>
     arg
     (map keyword)
