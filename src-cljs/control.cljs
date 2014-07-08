@@ -20,7 +20,7 @@
         (put! rsp-ch {:ok? false :error body}))))) ; else, error, notify child
 
 (defn- sign-up [user pass rsp-ch]
-  (sign :sign-up http/post {:username user :password pass :roles [:user :admin]} rsp-ch))
+  (sign :sign-up http/post {:username user :password pass :roles "user"} rsp-ch))
 
 (defn- sign-in [user pass rsp-ch]
   (sign :sign-in http/post {:username user :password pass} rsp-ch))

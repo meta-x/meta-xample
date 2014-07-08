@@ -1,6 +1,6 @@
 (ns mx.example.notes.web.enforcer
   (:require [clojure.string :refer [blank? trim]]
-            [clojure.set :refer [difference]]
+            [clojure.set :refer [select]]
             [ring.util.response :refer [response status]]))
 
 ; TODO: validate-fail
@@ -8,11 +8,16 @@
 
 ; COERCION
 
-(defn coerce-roles [param arg]
+(defn- ->kw-set [arg]
   (->>
     arg
     (map keyword)
     (set)))
+
+(defn coerce-roles [param arg]
+  (if (coll? arg)
+    (->kw-set arg)
+    (->kw-set [arg])))
 
 (defn coerce-visibility [param arg]
   (keyword arg))
@@ -36,7 +41,7 @@
     (throw-exception (str param " must have at least " MIN_PASSWORD_LENGTH " characters"))))
 
 (defn- invalid-roles-ex [param arg]
-  (let [roles-diff (difference #{:admin :user} arg)]
+  (let [roles-diff (select (comp not #{:admin :user}) arg)]
     (if-not (empty? roles-diff)
       (throw-exception (str param " cannot accept unknown values " roles-diff)))))
 
