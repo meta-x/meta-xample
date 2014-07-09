@@ -160,16 +160,57 @@ This is accomplished through the use of [secretary](https://github.com/gf3/secre
 So how does all this work?
 
 First, we define a set of named Secretary routes. When a route is accessed, all that happens is an app-state transition (on `:current-view` and `:current-view-state`).
-```
-[TODO: code]
+```clojure
+(defn set-current-view! [v & s]
+  (swap! app-state assoc :current-view v)
+  (swap! app-state assoc :current-view-state (first s)))
+
+(defroute r-index "/" [] (set-current-view! :index))
+(defroute r-sign-in "/sign-in" [] (set-current-view! :sign-in))
+(defroute r-sign-up "/sign-up" [] (set-current-view! :sign-up))
+(defroute r-notes "/notes" []   (set-current-view! :notes))
+(defroute r-note "/notes/:id" [id] (set-current-view! :note {:note-id id}))
+(defroute r-404 "*" [] (set-current-view! :404))
 ```
 
 Then, in the root component, we "listen" on the `:current-view` state and run the `render-page` function that will `om/build` the respective page component.
-```
-[TODO: code]
+```clojure
+(defcomponent teh-app [{:keys [current-view current-view-state] :as app} owner]
+  ;...
+
+  (render-state [_ state]
+    (case current-view
+      :index (render-page index-view app false)
+      :sign-in (render-page sign-view app false {:label "Sign In" :type :sign-in})
+      :sign-up (render-page sign-view app false {:label "Sign Up" :type :sign-up})
+      :notes (render-page notes-view app true)
+      ; current-view-state is a cursor! since we can't deref it in render, we need to do this *argh*
+      :note (render-page note-view app false {:note-id (:note-id current-view-state)})
+      (dom/div "404") ; TODO: 404
+  )))
 ```
 
-But what happens if an URL transition is requested from within the application (e.g. a successful sign in should transition the user to the notes page)? Well, the root component is also listening on a core.async channel that is used for these notifications and determines if there is a page transition request. If that is the case, it will make use of the named routes to change the URL location `hash`. This in turn will trigger Secretary and change the app-state.
+But what happens if an URL transition is requested from within the application (e.g. a successful sign in should transition the user to the notes page)? Well, the root component is also listening on a core.async channel that is used for these notifications and determines if there is a page transition request.
+
+If that is the case, it will make use of the named routes to change the URL location `hash`. This in turn will trigger Secretary and change the app-state.
+```clojure
+(defcomponent teh-app [{:keys [current-view current-view-state] :as app} owner]
+
+  (will-mount [_]
+    (let [app-ch (om/get-shared owner :app-ch)]
+      (go (while true
+        (let [{:keys [evt args] :as data} (<! app-ch)
+              next-route (next-route evt)
+              next-url (next-route args)]
+          ; changing the app's "context" (i.e. url+view) from within
+          ; i.e. an internal event is requesting a change
+          (set! (.-hash js/window.location) next-url)
+    )))))
+
+  ; ...
+  )
+```
+
 [TODO: figure with the routing flow]
 
 #### Om Components
@@ -191,15 +232,15 @@ This module contains the "page" components. Most of the page components are simp
 
 - `index-view`
 The `index-view` is a simple view that shows a sign-in button and a sign-up button. Clicking on any of these buttons will transition the app to the `sign-view` page.
-[figure]
+[TODO: figure]
 
 - `sign-view`
 The `sign-view` is a view that renders a sub-component with the username/password inputs and a button for the specific case (sign-in or sign-up).
-[figure]
+[TODO: figure]
 
 - `notes-view`
 The `notes-view` contains two sub-components (`note-creator` and `notes-list`). It is the "main view" of the application once the user is signed-in.
-[figure]
+[TODO: figure]
 
 - `note-view`
 The `note-view` is the page that displays info about a single note.
@@ -210,36 +251,36 @@ The data for the note is fetched on `will-mount`. A message is put on the shared
 
 You'll notice that an `evt-ch` is passed to the sub-component. This channel is used to bubble up events to this page component from the sub-component. This is required so that this component can be notified of the `delete` event and do its required cleaning up.
 
-[figure]
+[TODO: figure]
 
 ##### [views.cljs](/src-cljs/views.cljs)
 This module contains the "widget" components, that is components that can be reusable in any "page" component or even other view component.
 
 - `sign-buttons`
 In this component, I decided to use an `a href` as a way to transition between pages, just to show that it can be done.
-[figure]
+[TODO: figure]
 
 - `sign-out-button`
 The `sign-out-button` component is a simple button. When the button is clicked, the `on-sign-out-click` event handler puts a message in the `srv-ch`. When a successful response comes back, the app-state is updated so that the user is no longer authenticated and a message is put on the `app-ch` to request a page transition.
-[figure]
+[TODO: figure]
 
 - `sign-in-up`
 This is a dual purpose component, depending on how it is built. It contains two input fields and a button. When the button is clicked, some validation is done on the input values and it will either sign-up a new user or sign-in an existing user.
 Just as the other components, on success, the app-state is updated and a message is sent through `app-ch` to initiate a page transition.
 There is also a hidden `div` that is used as an error message placeholder when an error occurs.
-[figure]
+[TODO: figure]
 
 - `note-creator`
 This component builds a textarea and a few buttons to setup the UI for creating notes. When the create note button is clicked, a message is put into the `srv-ch` with the information about the new note. On success, the new note is added to the `app-state`'s `notes` vector.
-[figure]
+[TODO: figure]
 
 - `note-item`
 This component displays note information and allows for deleting/changing visibility of the note. It is used both by the `note-view` page component and by the `notes-list` component. It functions just as the other components that deal with server communication.
-[figure]
+[TODO: figure]
 
 - `notes-list`
 This component contains all the `note-item` sub components. The notes are fetched in `get-notes`. Notifications of note deletion are caught by `destroy-note`. All this is done on the components' `will-mount`.
-[figure]
+[TODO: figure]
 
 ##### [server.cljs](/src-cljs/server.cljs)
 This is the module responsible for all server interaction. [cljs-http](https://github.com/r0man/cljs-http) is used to communicate with the server (asynchronously using core.async).
