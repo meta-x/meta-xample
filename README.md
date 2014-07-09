@@ -100,19 +100,19 @@ The middleware pipeline also shows how `enforcer` and `bodyguard` are configured
   ))
 ```
 
-#### web/handlers.clj
+#### [web/handlers.clj](/src-clj/mx/example/notes/web/handlers.clj)
 The implementation of the endpoint handlers. It is your basic CRUD app.
 
 Directly, the handlers deal with the required logic for their endpoint. In most cases, this means passing the arguments to the `service` layer and outputting the correct response e.g. HTTP status code 200 if sucessful and response in body, 404 if not found and error message in body, etc. Since all responses are automatically transformed into JSON by a middleware, no content-type changes are required (but could happen here, if needed).
 
 Indirectly, data coercion and validation, using `enforcer`, is being done on the arguments of the handlers - notice the metadata in the handlers and the parameters.
 
-#### web/enforcer.clj
+#### [web/enforcer.clj](/src-clj/mx/example/notes/web/enforcer.clj)
 This is the module with the functions that actually enforce the rules for the arguments of the handlers. Coercion operations are things such as converting the argument to a keyword. Validation is mainly "business logic" stuff, such as minimum password length, correct value checking and not empty value.
 
 A authorization checker macro `when-auth-matches` was created to be used by some handlers that require that the client's identity is the same as of the owner of the resource that they are attempting to access. E.g. `notes$get` and `note$get` makes sure that the user can only access his own private notes and not someone else's private notes.
 
-#### web/bodyguard.clj
+#### [web/bodyguard.clj](/src-clj/mx/example/notes/web/bodyguard.clj)
 This module simply defines the security policy for accessing the endpoints of the API.
 The definition is quite simple:
 
@@ -122,10 +122,10 @@ The definition is quite simple:
 
 - accessing admin operations can only be done by users with `admin` role.
 
-#### service.clj
+#### [service.clj](/src-clj/mx/example/notes/service.clj)
 The `service` module is the module responsible for the coordination of the system. In our basic example, `service` doesn't do much except calling the appropriate `storage` functions. In a more complex system, `service` could be doing business logic operations such as calling some parsers and/or communicating with queues or other processes.
 
-#### storage.clj
+#### [storage.clj](/src-clj/mx/example/notes/storage.clj)
 Where things go to di... get stored! Communication with our database happens here (in this case, MongoDB).
 
 
@@ -175,7 +175,7 @@ But what happens if an URL transition is requested from within the application (
 #### Om Components
 As described in the project structure, there are 2+1 types of components in this application.
 
-##### main.cljs
+##### [main.cljs](/src-cljs/main.cljs)
 This module sets up the Om app root component and the frontend routing with Secretary.
 
 The root component controls the application. This component is used in `om/root` to initialize the application and works as a state machine, rendering the correct page component based on the app-state's `current-view` field.
@@ -184,7 +184,7 @@ The app-state is a simple map that holds the information regarding the current p
 
 The `render-page` function also takes into account if the page is "protected" and if the user is authenticated or not. Do note that this is a basic frontend protection which can easily be bypassed - it does not forfeit server side validation!
 
-##### pages.cljs
+##### [pages.cljs](/src-cljs/pages.cljs)
 The page components are supposed to reflect a whole "page", i.e. routes will match page components.
 
 This module contains the "page" components. Most of the page components are simple components that render the sub-components who do the actual work.
@@ -212,7 +212,7 @@ You'll notice that an `evt-ch` is passed to the sub-component. This channel is u
 
 [figure]
 
-##### views.cljs
+##### [views.cljs](/src-cljs/views.cljs)
 This module contains the "widget" components, that is components that can be reusable in any "page" component or even other view component.
 
 - `sign-buttons`
@@ -241,7 +241,7 @@ This component displays note information and allows for deleting/changing visibi
 This component contains all the `note-item` sub components. The notes are fetched in `get-notes`. Notifications of note deletion are caught by `destroy-note`. All this is done on the components' `will-mount`.
 [figure]
 
-##### servers.cljs
+##### [servers.cljs](/src-cljs/servers.cljs)
 This is the module responsible for all server interaction. [cljs-http](https://github.com/r0man/cljs-http) is used to communicate with the server (asynchronously using core.async).
 
 This module listens for orders from components in a go-loop on the `srv-ch`. When a message is read, the requested operation is executed and the response is sent back to the component. This is done through a response channel (that is sent in the message by the calling component).
