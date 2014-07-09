@@ -2,7 +2,7 @@
 
 An example project showcasing the use of [paths](https://github.com/meta-x/paths), [enforcer](https://github.com/meta-x/enforcer) and [bodyguard](https://github.com/meta-x/bodyguard).
 
-This project also served as a learning case for Clojurescript (and Om). For a review of my Clojurescript/Om experience, check [this](http://islandofatlas.net/TODO).
+This project also served as a learning case for Clojurescript (and Om). <!--TODO: For a review of my Clojurescript/Om experience, check [this](http://islandofatlas.net/TODO).-->
 
 Questions, suggestions or other comments should be directed to GitHub Issues.
 
@@ -101,14 +101,75 @@ The frontend app is a ClojureScript+Om+core.async Single Page Application (SPA).
 
 The folder organization for the frontend project is relatively simpler than the backend project as there are fewer modules. The code is broken into four modules: one module (`main`) starts the Om app and the frontend routing, another module (`server`) takes care of communicating with the server, and the remaining two modules are responsible for the "pages" and "views" Om components.
 
-Do note that there is no "best architecture" for Om applications yet. Other than the React.js component's lifecycle, how components should interact with each other and with other entities is still something that the community is trying to reach a consensus.
+Do note that there is no consensus for what is the "best architecture" for Om applications. How components should interact with each other and with other entities is still something that the community is still trying to find a consensus on.
 
-If you'd like to read a bit more about the experience of developing a ClojureScript+Om app, check [this blog post]().
-
-#### Om/core.async
-TODO: what about describing the Om-related code???
+<!--If you'd like to read a bit more about the experience of developing a ClojureScript+Om app, check [this blog post](http://islandofatlas.net/TODO).-->
 
 
+
+
+
+
+
+
+
+
+
+
+#### Tying everything together
+TODO: image of how things work
+
+
+
+
+TODO: Routing
+This being a SPA means that we must find a different way of telling the browser to completely render a new "page" and to make use of the back/forward history navigation.
+
+This is accomplished through the use of [secretary](https://github.com/gf3/secretary), some manual URL change and a state machine in the root component.
+
+So how does all this work?
+
+First, we define a set of named Secretary routes. When a route is accessed, all that happens is an app-state transition (on `:current-view` and `:current-view-state`).
+[code]
+
+Then, in the root component, we "listen" on the `:current-view` state and run the `render-page` function that will `om/build` the respective page component.
+[code]
+
+But what happens if an URL transition is requested from within the application (e.g. a successful sign in should transition the user to the notes page)? Well, the root component is also listening on a core.async channel that is used for these notifications and determines if there is a page transition request. If that is the case, it will make use of the named routes to change the URL location `hash`. This in turn will trigger Secretary and change the app-state.
+
+[figure with the routing flow]
+
+
+
+
+TODO: Do note that the project is using Prismatic's [om-tools](). This might be confusing for beginners, since the code does not really match most Om tutorials out there but is a little bit less verbose.
+
+
+
+
+
+
+#### Om Components
+As described in the project structure, there are 2+1 types of components in this application.
+
+- Root component: The component that controls the application. This component is used in `om/root` to initialize the application and works as a state machine, rendering the correct page component based on the app-state's `current-view` field.
+
+- Page components: Components that are supposed to reflect a whole "page", i.e. routes will match page components.
+
+- View components: "Widget" components that can be reusable in any "page" component.
+
+I could've also turned the server module into an invisible component, but I don't really saw the need for that.
+
+
+
+
+
+
+
+
+
+
+#### Communication with core.async
 There are several different types of communication happening in the application. Most of the communication happens using core.async's channels.
 
 srv-ch
@@ -135,39 +196,88 @@ TODO: what? this makes no sense. the component should just put! to the srv-ch!
 
 
 
-Do note that using Prismatic's [om-tools]() as such the code is a little bit less verbose
 
+
+
+
+
+
+####
 
 #### `main.cljs`
-This module sets up the Om app and the frontend routing with [Secretary](https://github.com/.../secretary).
+This module sets up the Om app and the frontend routing with Secretary.
 
-TODO: describe `app-state` atom - what does this structure mean
-TODO: describe how the frontend routing works (secretary, set-current-view!, next-route)
-TODO: describe how Om is used (root component), render-page, how "page transitions" occur (render-state)
+The app-state is a simple map that holds the information regarding the current page view (`:current-view` and `:current-view-state`), if the user is authenticated (`:authenticated?`, `:username` and `:user-id`) and a vector with the notes (`:notes`) that the user is seeing in the current view (a list of notes or perhaps a vector with a single note).
+
+; TODO: maybe talk about the root component?
+
+The `render-page` function also takes into account if the page is "protected" and if the user is authenticated or not. Do note that this is a basic frontend protection which can easily be bypassed - it does not forfeit server side validation!
 
 #### `pages.cljs`
-The "page" components.
-TODO: describe index-view (image of the component)
-TODO: describe sign-view (image of the component)
-TODO: describe notes-view (image of the component)
-TODO: describe note-view (image of the component) - will-mount (get-note and destroy-note) and the hack in render-state's build note-item (the filter); why this component exists at the "page level"
+This module contains the "page" components. Most of the page components are simple components that render the sub-components who do the actual work.
+
+- `index-view`
+The `index-view` is a simple view that shows a sign-in button and a sign-up button. Clicking on any of these buttons will transition the app to the `sign-view` page.
+[figure]
+
+- `sign-view`
+The `sign-view` is a view that renders a sub-component with the username/password inputs and a button for the specific case (sign-in or sign-up).
+[figure]
+
+- `notes-view`
+The `notes-view` contains two sub-components (`note-creator` and `notes-list`). It is the "main view" of the application once the user is signed-in.
+[figure]
+
+- `note-view`
+The `note-view` is the page that displays info about a single note.
+
+This component shows a "Loading" string while waiting for the data to be bound. Once the data is bound, a `note-item` sub-component is built. Since we're at the page level, we don't really have a cursor to the exact note. Thus a small hack is done to assert that we use the state of the exact note (not really required as the `:notes` vector in app-state actually only contains a single element).
+
+The data for the note is fetched on `will-mount`. A message is put on the shared `srv-ch` and once the result comes in, the app-state is updated.
+
+You'll notice that an `evt-ch` is passed to the sub-component. This channel is used to bubble up events to this page component from the sub-component. This is required so that this component can be notified of the `delete` event and do its required cleaning up.
+
+[figure]
+
+
 
 
 #### `views.cljs`
 The "widget" components.
 
-TODO: describe sign-buttons
-TODO: describe sign-out-button - event handler puts a message in the srv-ch and when a successful response is received the app-state is updated and a new message is inserted into the app-ch to get a page transition
-TODO: describe sign-in-up - dual purpose component depending on how it is instantiated; does input validation; event handler puts a message into srv-ch with respective tag and when successful response comes in, app-state is updated and a message is sent through app-ch to get a page transition
-TODO: describe note-creator - component handles user input and when create event handler executes, sends the msg to srv-ch to create note
-TODO: describe note-item - component that displays note information and allows for deleting/changing visibility of the note
-TODO: describe notes-list - component that contains all the note-item sub components; will-mount get-notes and destroy note
+- `sign-buttons`
+In this component, I decided to use an `a href` as a way to transition between pages, just to show that it can be done.
+[figure]
 
+- `sign-out-button`
+The `sign-out-button` component is a simple button. When the button is clicked, the `on-sign-out-click` event handler puts a message in the `srv-ch`. When a successful response comes back, the app-state is updated so that the user is no longer authenticated and a message is put on the `app-ch` to request a page transition.
+[figure]
+
+- `sign-in-up`
+This is a dual purpose component, depending on how it is built. It contains two input fields and a button. When the button is clicked, some validation is done on the input values and it will either sign-up a new user or sign-in an existing user.
+Just as the other components, on success, the app-state is updated and a message is sent through `app-ch` to initiate a page transition.
+There is also a hidden `div` that is used as an error message placeholder when an error occurs.
+[figure]
+
+- `note-creator`
+This component builds a textarea and a few buttons to setup the UI for creating notes. When the create note button is clicked, a message is put into the `srv-ch` with the information about the new note. On success, the new note is added to the `app-state`'s `notes` vector.
+[figure]
+
+- `note-item`
+This component displays note information and allows for deleting/changing visibility of the note. It is used both by the `note-view` page component and by the `notes-list` component. It functions just as the other components that deal with server communication.
+[figure]
+
+- `notes-list`
+This component contains all the `note-item` sub components. The notes are fetched in `get-notes`. Notifications of note deletion are caught by `destroy-note`. All this is done on the components' `will-mount`.
+[figure]
 
 #### `servers.cljs`
-This is the module responsible for all server interaction
-using cljs-http to interact with server via core.async
-execution mode is to stay in a go-loop and wait for messages from components
+This is the module responsible for all server interaction.
+[cljs-http]() is used to communicate with the server asynchronously using core.async.
+This module listens for orders from components in a go-loop on the `srv-ch`.
+When a message is read, the requested operation is executed and the response is sent back to the component.
+This is done through a response channel that was sent by the calling component.
+
 
 
 ## License

@@ -92,7 +92,7 @@
       (dom/input {:type "text" :placeholder "username" :ref "username"})
       (dom/input {:type "password" :placeholder "password" :ref "password"})
       (dom/button {:on-click (partial on-sign-click app owner type)} label)
-      (dom/div {:class "hidden" :ref "error"} error-msg)
+      (dom/div {:class "hidden" :ref "error"} error-msg) ; TODO: css visibility?
     )))
 
 ; note creator component
