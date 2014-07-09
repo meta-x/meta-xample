@@ -241,7 +241,7 @@ This component displays note information and allows for deleting/changing visibi
 This component contains all the `note-item` sub components. The notes are fetched in `get-notes`. Notifications of note deletion are caught by `destroy-note`. All this is done on the components' `will-mount`.
 [figure]
 
-##### [servers.cljs](/src-cljs/servers.cljs)
+##### [server.cljs](/src-cljs/server.cljs)
 This is the module responsible for all server interaction. [cljs-http](https://github.com/r0man/cljs-http) is used to communicate with the server (asynchronously using core.async).
 
 This module listens for orders from components in a go-loop on the `srv-ch`. When a message is read, the requested operation is executed and the response is sent back to the component. This is done through a response channel (that is sent in the message by the calling component).
