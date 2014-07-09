@@ -2,10 +2,10 @@
 
 An example project showcasing the use of [paths](https://github.com/meta-x/paths), [enforcer](https://github.com/meta-x/enforcer) and [bodyguard](https://github.com/meta-x/bodyguard).
 
-This project also served as a learning case for Clojurescript (and Om).
+This project also served as a learning case for ClojureScript (and Om).
 
 <!---
-TODO: For a review of my Clojurescript/Om experience, check [this](http://islandofatlas.net/TODO).
+TODO: For a review of my ClojureScript/Om experience, check [this](http://islandofatlas.net/TODO).
 -->
 
 Questions, suggestions or other comments should be directed to GitHub Issues.
@@ -24,7 +24,7 @@ http://clj-notes.herokuapp.com
 
 ### Status
 
-Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. placeholder for error messages) and lacks styling. Some more features could be added. Check the GitHub issues list if you wish to implement something.
+Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. placeholder for error messages) and lacks styling. Some more features could be added. <!---TODO: Check the GitHub issues list if you wish to implement something.-->
 
 
 
@@ -32,7 +32,7 @@ Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. p
 
 Before running, you'll need to set [environ](https://github.com/weavejester/environ)-compatible variables for `:mongo-uri` and `:cookiestore-key`. This means creating a `.lein-env` with a map with the two keywords or setting the environment variables `MONGO_URI` and `COOKIESTORE_KEY`.
 
-Run `lein cljsbuild auto` to build the frontend clojurescript code.
+Run `lein cljsbuild auto` to build the frontend ClojureScript code.
 
 Run `lein ring server` to start the backend.
 
@@ -50,7 +50,7 @@ The project is organized in the following way:
 
 - Clojure code in `/src-clj`
 
-- Clojurescript code in `/src-cljs`
+- ClojureScript code in `/src-cljs`
 
 [I understand that this is not the typical folder structure for Clojure/Script applications (typical folder structure is `/src/clj` and `/src/cljs`, even though someone - Chris Houser? - has suggested there should be no such separation by language but by domain).]
 
