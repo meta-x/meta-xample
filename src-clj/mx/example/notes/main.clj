@@ -57,9 +57,6 @@
     (wrap-keyword-params)
     (wrap-params)
 
-    ; TODO:
-    ; wrap-json-response throws an error if it can't convert things to json
-    ; I either need a "softer" way to handle that or something entirely different...
     (wrap-json-response)
 
     (wrap-authorization security-policy)

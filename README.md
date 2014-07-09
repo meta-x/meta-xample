@@ -63,10 +63,42 @@ The app has one endpoint (`/`) that serves the html for a single page applicatio
 
 The backend's modules are described next. You don't have to follow this kind of organization in your own project. It is simply broken down in many modules to better see how things interact.
 
-#### main.clj
-Route definition for the Ring app. The routes are defined using `paths` and the Ring app is setup to use these routes in the the ring middleware pipeline definition. The setup for `paths` is done by building the `routes-tree` and using `router-with-tree` as the handler for the Ring app.
+#### [main.clj](/src-clj/mx/example/notes/main.clj)
+Route definition for the Ring app. The routes are defined using `paths` and the Ring app is setup to use these routes in the the Ring middleware pipeline definition. The setup for `paths` is done by building the `routes-tree` and using `router-with-tree` as the handler for the Ring app.
+```clojure
+(def routes [
+  "/" {:get #'h/index}
+
+  "/user" {:post #'h/user$post}
+  "/user/session" {:post #'h/user-session$post :delete #'h/user-session$delete}
+
+  "/note" {:post #'h/note$post :get #'h/notes$get}
+  "/note/:id" {:get #'h/note$get :put #'h/note$put :delete #'h/note$delete}
+
+  "/public/:*" resource-handler
+  "/download/:*" file-handler
+])
+```
 
 The middleware pipeline also shows how `enforcer` and `bodyguard` are configured.
+```clojure
+(def app
+  (->
+    routes-tree
+    (router-with-tree)
+    (wrap-enforcer (bind-query-routes-tree routes-tree))
+
+    (wrap-auth-to-params)
+    (wrap-keyword-params)
+    (wrap-params)
+
+    (wrap-json-response)
+
+    (wrap-authorization security-policy)
+    (wrap-authentication security-policy)
+    (wrap-session {:store (cookie-store {:key (env :cookiestore-key)})})
+  ))
+```
 
 #### web/handlers.clj
 The implementation of the endpoint handlers. It is your basic CRUD app.
