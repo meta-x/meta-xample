@@ -24,7 +24,10 @@ http://clj-notes.herokuapp.com
 
 ### Status
 
-Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. placeholder for error messages) and lacks styling. Some more features could be added. <!--- TODO: Check the GitHub issues list if you wish to implement something.-->
+Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. placeholder for error messages) and lacks styling. Some more features could be added.
+<!---
+TODO: Check the GitHub issues list if you wish to implement something.
+-->
 
 
 
