@@ -2,7 +2,11 @@
 
 An example project showcasing the use of [paths](https://github.com/meta-x/paths), [enforcer](https://github.com/meta-x/enforcer) and [bodyguard](https://github.com/meta-x/bodyguard).
 
-This project also served as a learning case for Clojurescript (and Om). <!--TODO: For a review of my Clojurescript/Om experience, check [this](http://islandofatlas.net/TODO).-->
+This project also served as a learning case for Clojurescript (and Om).
+
+<!---
+TODO: For a review of my Clojurescript/Om experience, check [this](http://islandofatlas.net/TODO).
+-->
 
 Questions, suggestions or other comments should be directed to GitHub Issues.
 
@@ -103,8 +107,9 @@ The folder organization for the frontend project is relatively simpler than the 
 
 Do note that there is no consensus for what is the "best architecture" for Om applications. How components should interact with each other and with other entities is still something that the community is still trying to find a consensus on.
 
-<!--If you'd like to read a bit more about the experience of developing a ClojureScript+Om app, check [this blog post](http://islandofatlas.net/TODO).-->
-
+<!---
+TODO: If you'd like to read a bit more about the experience of developing a ClojureScript+Om app, check [this blog post](http://islandofatlas.net/TODO).
+-->
 
 
 
@@ -204,7 +209,7 @@ TODO: what? this makes no sense. the component should just put! to the srv-ch!
 
 ####
 
-#### `main.cljs`
+#### main.cljs
 This module sets up the Om app and the frontend routing with Secretary.
 
 The app-state is a simple map that holds the information regarding the current page view (`:current-view` and `:current-view-state`), if the user is authenticated (`:authenticated?`, `:username` and `:user-id`) and a vector with the notes (`:notes`) that the user is seeing in the current view (a list of notes or perhaps a vector with a single note).
@@ -213,7 +218,7 @@ The app-state is a simple map that holds the information regarding the current p
 
 The `render-page` function also takes into account if the page is "protected" and if the user is authenticated or not. Do note that this is a basic frontend protection which can easily be bypassed - it does not forfeit server side validation!
 
-#### `pages.cljs`
+#### pages.cljs
 This module contains the "page" components. Most of the page components are simple components that render the sub-components who do the actual work.
 
 - `index-view`
@@ -242,7 +247,7 @@ You'll notice that an `evt-ch` is passed to the sub-component. This channel is u
 
 
 
-#### `views.cljs`
+#### views.cljs
 The "widget" components.
 
 - `sign-buttons`
@@ -271,7 +276,7 @@ This component displays note information and allows for deleting/changing visibi
 This component contains all the `note-item` sub components. The notes are fetched in `get-notes`. Notifications of note deletion are caught by `destroy-note`. All this is done on the components' `will-mount`.
 [figure]
 
-#### `servers.cljs`
+#### servers.cljs
 This is the module responsible for all server interaction.
 [cljs-http]() is used to communicate with the server asynchronously using core.async.
 This module listens for orders from components in a go-loop on the `srv-ch`.
