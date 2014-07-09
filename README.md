@@ -24,7 +24,7 @@ http://clj-notes.herokuapp.com
 
 ### Status
 
-Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. placeholder for error messages) and lacks styling. Some more features could be added. <!---TODO: Check the GitHub issues list if you wish to implement something.-->
+Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. placeholder for error messages) and lacks styling. Some more features could be added. <!--- TODO: Check the GitHub issues list if you wish to implement something.-->
 
 
 
@@ -37,11 +37,11 @@ Run `lein cljsbuild auto` to build the frontend ClojureScript code.
 Run `lein ring server` to start the backend.
 
 
-
+<!---
 ## How things work
 
 [TODO: image with system architecture]
-
+-->
 
 
 ## Project Organization
@@ -142,10 +142,11 @@ TODO: If you'd like to read a bit more about the experience of developing a Cloj
 -->
 
 #### Tying everything together
+<!---
 [TODO: image of how the frontend works]
 
 TODO: description of the general workflow
-
+-->
 
 
 
@@ -158,6 +159,10 @@ This being a SPA means that we must find a different way of telling the browser 
 This is accomplished through the use of [secretary](https://github.com/gf3/secretary), some manual URL change and a state machine in the root component.
 
 So how does all this work?
+
+<!---
+[TODO: figure with the routing flow]
+-->
 
 First, we define a set of named Secretary routes. When a route is accessed, all that happens is an app-state transition (on `:current-view` and `:current-view-state`).
 ```clojure
@@ -186,7 +191,7 @@ Then, in the root component, we "listen" on the `:current-view` state and run th
       :notes (render-page notes-view app true)
       ; current-view-state is a cursor! since we can't deref it in render, we need to do this *argh*
       :note (render-page note-view app false {:note-id (:note-id current-view-state)})
-      (dom/div "404") ; TODO: 404
+      (dom/div "404")
   )))
 ```
 
@@ -211,8 +216,6 @@ If that is the case, it will make use of the named routes to change the URL loca
   )
 ```
 
-[TODO: figure with the routing flow]
-
 #### Om Components
 As described in the project structure, there are 2+1 types of components in this application.
 
@@ -232,15 +235,21 @@ This module contains the "page" components. Most of the page components are simp
 
 - `index-view`
 The `index-view` is a simple view that shows a sign-in button and a sign-up button. Clicking on any of these buttons will transition the app to the `sign-view` page.
+<!---
 [TODO: figure]
+-->
 
 - `sign-view`
 The `sign-view` is a view that renders a sub-component with the username/password inputs and a button for the specific case (sign-in or sign-up).
+<!---
 [TODO: figure]
+-->
 
 - `notes-view`
 The `notes-view` contains two sub-components (`note-creator` and `notes-list`). It is the "main view" of the application once the user is signed-in.
+<!---
 [TODO: figure]
+-->
 
 - `note-view`
 The `note-view` is the page that displays info about a single note.
@@ -251,36 +260,50 @@ The data for the note is fetched on `will-mount`. A message is put on the shared
 
 You'll notice that an `evt-ch` is passed to the sub-component. This channel is used to bubble up events to this page component from the sub-component. This is required so that this component can be notified of the `delete` event and do its required cleaning up.
 
+<!---
 [TODO: figure]
+-->
 
 ##### [views.cljs](/src-cljs/views.cljs)
 This module contains the "widget" components, that is components that can be reusable in any "page" component or even other view component.
 
 - `sign-buttons`
 In this component, I decided to use an `a href` as a way to transition between pages, just to show that it can be done.
+<!---
 [TODO: figure]
+-->
 
 - `sign-out-button`
 The `sign-out-button` component is a simple button. When the button is clicked, the `on-sign-out-click` event handler puts a message in the `srv-ch`. When a successful response comes back, the app-state is updated so that the user is no longer authenticated and a message is put on the `app-ch` to request a page transition.
+<!---
 [TODO: figure]
+-->
 
 - `sign-in-up`
 This is a dual purpose component, depending on how it is built. It contains two input fields and a button. When the button is clicked, some validation is done on the input values and it will either sign-up a new user or sign-in an existing user.
 Just as the other components, on success, the app-state is updated and a message is sent through `app-ch` to initiate a page transition.
 There is also a hidden `div` that is used as an error message placeholder when an error occurs.
+<!---
 [TODO: figure]
+-->
 
 - `note-creator`
 This component builds a textarea and a few buttons to setup the UI for creating notes. When the create note button is clicked, a message is put into the `srv-ch` with the information about the new note. On success, the new note is added to the `app-state`'s `notes` vector.
+<!---
 [TODO: figure]
+-->
 
 - `note-item`
 This component displays note information and allows for deleting/changing visibility of the note. It is used both by the `note-view` page component and by the `notes-list` component. It functions just as the other components that deal with server communication.
+<!---
 [TODO: figure]
+-->
 
 - `notes-list`
 This component contains all the `note-item` sub components. The notes are fetched in `get-notes`. Notifications of note deletion are caught by `destroy-note`. All this is done on the components' `will-mount`.
+<!---
 [TODO: figure]
+-->
 
 ##### [server.cljs](/src-cljs/server.cljs)
 This is the module responsible for all server interaction. [cljs-http](https://github.com/r0man/cljs-http) is used to communicate with the server (asynchronously using core.async).
