@@ -2,8 +2,6 @@
 
 An example project showcasing the use of [paths](https://github.com/meta-x/paths), [enforcer](https://github.com/meta-x/enforcer) and [bodyguard](https://github.com/meta-x/bodyguard).
 
-As such, this README will be mainly focused on the backend of this app.
-
 This project also served as a learning case for Clojurescript (and Om). For a review of my Clojurescript/Om experience, check [this](http://islandofatlas.net/TODO).
 
 Questions, suggestions or other comments should be directed to GitHub Issues.
@@ -12,22 +10,17 @@ Questions, suggestions or other comments should be directed to GitHub Issues.
 
 ## What exactly is this example?
 
-TODO: describe this example
-note taking application
-users sign up/in/out
-users can create/retrieve/update/delete their own notes and view public notes from other users
+This example is a basic CRUD app that allows users to write down notes. These notes are by default private, but they can be set to public so others can view them (when given a direct link).
 
+The app allows anyone to create an account. Once that is done, notes can be created, viewed or deleted. The visibility of the note can also be changed.
 
-
-## Status
-
-Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. placeholder for error messages) and lacks styling.
-
-
-
-## Live Demo
+### Live Demo
 
 http://clj-notes.herokuapp.com
+
+### Status
+
+Functional, but frontend is not complete - does not have a perfect UI/UX (e.g. placeholder for error messages) and lacks styling. Some more features could be added. Check the GitHub issues list if you wish to implement something.
 
 
 
@@ -35,9 +28,9 @@ http://clj-notes.herokuapp.com
 
 Before running, you'll need to set [environ](https://github.com/weavejester/environ)-compatible variables for `:mongo-uri` and `:cookiestore-key`. This means creating a `.lein-env` with a map with the two keywords or setting the environment variables `MONGO_URI` and `COOKIESTORE_KEY`.
 
-`lein cljsbuild auto` to build the frontend clojurescript code.
+Run `lein cljsbuild auto` to build the frontend clojurescript code.
 
-`lein ring server` to run the backend.
+Run `lein ring server` to start the backend.
 
 
 
@@ -47,17 +40,21 @@ TODO: image with system architecture
 
 
 
-### Project Organization
+## Project Organization
 
-Clojure code in `src-clj`
-Clojurescript code in `src-cljs`
-not typical folder structure
-typical folder structure is `src/clj` and `src/cljs`
-(someone (Chris Houser?) even suggested there should be no such separation by language)
+The project is organized in the following way:
+
+- Clojure code in `src-clj`
+
+- Clojurescript code in `src-cljs`
+
+[I understand that this is not the typical folder structure for Clojure/Script applications (typical folder structure is `src/clj` and `src/cljs`, even though someone - Chris Houser? - has suggested there should be no such separation by language but by domain).]
+
+
 
 ### Backend
 
-The project's structure roughly follows Amit Rathore's [Domain-Driven Design with Clojure](http://www.infoq.com/presentations/DDD-Clojure). "Roughly", because I don't really use the domain part (:o).
+The backend project's structure roughly follows Amit Rathore's [Domain-Driven Design with Clojure](http://www.infoq.com/presentations/DDD-Clojure). "Roughly", because I don't really use the Domain part (:o).
 
 The app has one endpoint (`/`) that serves the html for a single page application and many endpoints fashioned in as a Web API.
 
@@ -102,7 +99,7 @@ Where things go to di... get stored! Communication with our database happens her
 
 The frontend app is a ClojureScript+Om+core.async Single Page Application (SPA). This means that all interaction with the server after the first request is done through AJAX calls to the server's Web API. After the data is retrieved and processed, it is rendered through Om components.
 
-The folder organization for the frontend project is relatively simpler than the backend project as there are fewer modules. The code is broken into four modules: one module (`main`) starts the Om app and the frontend routing, another module (`control`) takes care of communicating with the server, and the remaining two modules are responsible for the "page" and "widget" Om components.
+The folder organization for the frontend project is relatively simpler than the backend project as there are fewer modules. The code is broken into four modules: one module (`main`) starts the Om app and the frontend routing, another module (`server`) takes care of communicating with the server, and the remaining two modules are responsible for the "pages" and "views" Om components.
 
 Do note that there is no "best architecture" for Om applications yet. Other than the React.js component's lifecycle, how components should interact with each other and with other entities is still something that the community is trying to reach a consensus.
 
@@ -120,7 +117,7 @@ this is a write-only channel for the components
 the operations are server communication operations, but that is not important for the components
 the type of operation is identified by a :tag
 the response is given back to the component through a response channel
-it is basically a "soft-dependency" (what's that?) between the components and the server, since it's the control module that exposes an interface to the components
+it is basically a "soft-dependency" (what's that?) between the components and the server, since it's the server module that exposes an interface to the components
 
 app-ch
 some events that happen in the components need to bubble back up to the root component
@@ -148,7 +145,7 @@ TODO: describe `app-state` atom - what does this structure mean
 TODO: describe how the frontend routing works (secretary, set-current-view!, next-route)
 TODO: describe how Om is used (root component), render-page, how "page transitions" occur (render-state)
 
-#### `views.cljs`
+#### `pages.cljs`
 The "page" components.
 TODO: describe index-view (image of the component)
 TODO: describe sign-view (image of the component)
@@ -156,7 +153,7 @@ TODO: describe notes-view (image of the component)
 TODO: describe note-view (image of the component) - will-mount (get-note and destroy-note) and the hack in render-state's build note-item (the filter); why this component exists at the "page level"
 
 
-#### `components`
+#### `views.cljs`
 The "widget" components.
 
 TODO: describe sign-buttons
@@ -167,7 +164,7 @@ TODO: describe note-item - component that displays note information and allows f
 TODO: describe notes-list - component that contains all the note-item sub components; will-mount get-notes and destroy note
 
 
-#### `controls.cljs`
+#### `servers.cljs`
 This is the module responsible for all server interaction
 using cljs-http to interact with server via core.async
 execution mode is to stay in a go-loop and wait for messages from components

@@ -1,4 +1,4 @@
-(ns mx.control
+(ns mx.server
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :refer [chan <! put!]]
             [cljs-http.client :as http]))

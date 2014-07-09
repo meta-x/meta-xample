@@ -6,8 +6,8 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-tools.dom :as dom :include-macros true]
             [cljs.core.async :refer [chan <!]]
-            [mx.control :as srv-control]
-            [mx.views :refer [index-view sign-view notes-view note-view]])
+            [mx.server :as server]
+            [mx.pages :refer [index-view sign-view notes-view note-view]])
   (:import goog.History
            goog.History.EventType))
 
@@ -90,7 +90,7 @@
   )))
 
 ;;; wiring
-(let [srv-ch (chan) ; shared channel used to communicate with the server-control module
+(let [srv-ch (chan) ; shared channel used to communicate with the server module
       app-ch (chan)] ; shared channel used to communicate upstream with the app component
   (om/root
     teh-app
@@ -99,4 +99,4 @@
      :shared {:srv-ch srv-ch :app-ch app-ch}})
 
   ; setup server controller
-  (srv-control/init! srv-ch))
+  (server/init! srv-ch))
