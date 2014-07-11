@@ -92,11 +92,11 @@
 ;;; wiring
 (let [srv-ch (chan) ; shared channel used to communicate with the server module
       app-ch (chan)] ; shared channel used to communicate upstream with the app component
+  ; setup server controller
+  (server/init! srv-ch)
+
   (om/root
     teh-app
     app-state
     {:target (. js/document (getElementById "content"))
-     :shared {:srv-ch srv-ch :app-ch app-ch}})
-
-  ; setup server controller
-  (server/init! srv-ch))
+     :shared {:srv-ch srv-ch :app-ch app-ch}}))
